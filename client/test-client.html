@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <title>Чат-додаток – тестовий клієнт</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 0 auto; padding: 1rem; }
+    section { margin: 1rem 0; padding: 1rem; border: 1px solid #ddd; border-radius: 8px; }
+    h2 { margin-top: 0; font-size: 1rem; }
+    input, button, select { margin: 0 4px 4px 0; }
+    #log { background: #f5f5f5; padding: 8px; max-height: 320px; overflow-y: auto; font-size: 12px; white-space: pre-wrap; }
+    .event { color: #06c; }
+    .error { color: #c00; }
+    .sent { color: #080; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <h1>Чат-додаток – тестовий клієнт</h1>
+  <p>Запустіть сервер <code>npm run start:dev</code>, відкрийте <code>http://localhost:3000/test-client.html</code>. Спочатку створіть користувача (Auth → Sign up), потім вставте <code>id</code> у поле User ID.</p>
+
+  <section>
+    <h2>Identity</h2>
+    <label>User ID (X-User-Id): <input type="text" id="userId" placeholder="UUID після sign-up" style="width: 280px" /></label>
+    <br />
+    <label>API base: <input type="text" id="baseUrl" value="http://localhost:3000" style="width: 260px" /></label>
+  </section>
+
+  <div class="grid2">
+    <section>
+      <h2>Профіль (HTTP)</h2>
+      <div><button onclick="getProfile()">GET /users/me</button></div>
+      <div style="margin-top: 6px;">
+        <input type="text" id="profileNickname" placeholder="Нікнейм" />
+        <input type="text" id="profileAvatar" placeholder="URL аватара" />
+        <button onclick="updateProfile()">PATCH /users/me</button>
+      </div>
+    </section>
+    <section>
+      <h2>Auth (HTTP)</h2>
+      <div><input type="text" id="authMobile" placeholder="+380..." /> <input type="password" id="authPassword" placeholder="Пароль" /></div>
+      <div style="margin-top: 6px;"><button onclick="signUp()">Sign up</button> <button onclick="signIn()">Sign in</button></div>
+    </section>
+  </div>
+
+  <section>
+    <h2>Чати (HTTP)</h2>
+    <div>
+      <input type="text" id="chatName" placeholder="Назва чату" />
+      <label><input type="checkbox" id="isPrivate" /> Приватний</label>
+      <label><input type="checkbox" id="isGroup" /> Група</label>
+      <button onclick="createChat()">Створити чат</button>
+    </div>
+    <div style="margin-top: 8px;">
+      <button onclick="myChats()">Мої чати</button>
+      <input type="text" id="searchQuery" placeholder="Пошук публічних" />
+      <button onclick="searchPublic()">Пошук</button>
+    </div>
+    <div style="margin-top: 8px;">
+      <input type="text" id="joinLeaveChatId" placeholder="Chat ID" />
+      <button onclick="joinChat()">Приєднатись</button>
+      <button onclick="leaveChat()">Вийти</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Повідомлення (HTTP)</h2>
+    <div>
+      <input type="text" id="httpMsgChatId" placeholder="Chat ID" />
+      <input type="text" id="httpMsgContent" placeholder="Текст" />
+      <button onclick="sendMessageHttp()">POST /messages</button>
+    </div>
+    <div style="margin-top: 6px;">
+      <button onclick="getMessagesHttp()">GET /messages?chatId=...</button>
+      <input type="text" id="getMsgChatId" placeholder="Chat ID для GET" />
+    </div>
+  </section>
+
+  <section>
+    <h2>WebSocket – повідомлення та чати</h2>
+    <div>
+      <button id="wsConnect" onclick="toggleWs()">Підключити WS</button>
+      <span id="wsStatus">disconnected</span>
+    </div>
+    <div style="margin-top: 8px;">
+      <input type="text" id="wsChatId" placeholder="Chat ID для кімнати" />
+      <button onclick="joinChatRoom()">Join room</button>
+    </div>
+    <div style="margin-top: 8px;">
+      <input type="text" id="msgChatId" placeholder="Chat ID" />
+      <input type="text" id="msgContent" placeholder="Текст повідомлення" />
+      <input type="text" id="msgReplyToId" placeholder="Reply to ID (опц.)" />
+      <button onclick="sendMessage()">Надіслати (WS)</button>
+    </div>
+    <div style="margin-top: 8px;">
+      <button onclick="startTyping()">Друкує...</button>
+      <button onclick="stopTyping()">Стоп друкування</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Індикатор активності (WS)</h2>
+    <p>При підключенні WS сервер шле <code>userOnline</code> / <code>userOffline</code>. У профілі – поле <code>lastActiveAt</code>.</p>
+  </section>
+
+  <section>
+    <h2>Дзвінки (HTTP + WS)</h2>
+    <div>
+      <input type="text" id="callChatId" placeholder="Chat ID" />
+      <button onclick="startCallHttp()">POST /calls (старт)</button>
+    </div>
+    <div style="margin-top: 6px;">WS: <code>startCall</code>, <code>endCall</code>, <code>callSignal</code>; події: <code>callStarted</code>, <code>callEnded</code></div>
+  </section>
+
+  <section>
+    <h2>Сторіз (HTTP + WS)</h2>
+    <div>
+      <input type="text" id="storyMediaUrl" placeholder="URL медіа" />
+      <input type="text" id="storyCaption" placeholder="Підпис" />
+      <button onclick="createStoryHttp()">POST /stories</button>
+    </div>
+    <div style="margin-top: 6px;"><button onclick="getStoriesHttp()">GET /stories</button></div>
+  </section>
+
+  <section>
+    <h2>Папки (HTTP + WS)</h2>
+    <div>
+      <input type="text" id="folderName" placeholder="Назва папки" />
+      <button onclick="createFolderHttp()">POST /folders</button>
+      <button onclick="myFoldersHttp()">GET /folders</button>
+    </div>
+    <div style="margin-top: 6px;">
+      <input type="text" id="folderId" placeholder="Folder ID" />
+      <input type="text" id="folderChatId" placeholder="Chat ID" />
+      <button onclick="addChatToFolder()">Додати чат у папку</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Геолокація (HTTP + WS)</h2>
+    <div>
+      <input type="number" id="geoLat" placeholder="Широта" step="any" />
+      <input type="number" id="geoLng" placeholder="Довгота" step="any" />
+      <button onclick="shareLocationHttp()">POST /geolocation/share</button>
+    </div>
+    <div style="margin-top: 6px;"><button onclick="getTodayRouteHttp()">GET /geolocation/route/today</button> – маршрут за сьогодні</div>
+  </section>
+
+  <section>
+    <h2>Event log</h2>
+    <div id="log"></div>
+  </section>
+
+  <script>
+    const log = (msg, type = '') => {
+      const el = document.getElementById('log');
+      const line = document.createElement('div');
+      line.className = type;
+      line.textContent = `[${new Date().toISOString().slice(11, 19)}] ${msg}`;
+      el.appendChild(line);
+      el.scrollTop = el.scrollHeight;
+    };
+
+    function headers() {
+      const id = document.getElementById('userId').value;
+      return { 'Content-Type': 'application/json', 'X-User-Id': id || '' };
+    }
+
+    function baseUrl() {
+      return document.getElementById('baseUrl').value.replace(/\/$/, '');
+    }
+
+    async function getProfile() {
+      try {
+        const r = await fetch(`${baseUrl()}/users/me`, { headers: headers() });
+        const data = await r.json().catch(() => ({}));
+        log(`Profile: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+        if (data.id && !document.getElementById('userId').value) document.getElementById('userId').value = data.id;
+      } catch (e) { log(`Profile error: ${e.message}`, 'error'); }
+    }
+
+    async function updateProfile() {
+      const body = {};
+      const n = document.getElementById('profileNickname').value;
+      const a = document.getElementById('profileAvatar').value;
+      if (n) body.nickname = n;
+      if (a) body.avatarUrl = a;
+      try {
+        const r = await fetch(`${baseUrl()}/users/me`, { method: 'PATCH', headers: headers(), body: JSON.stringify(body) });
+        const data = await r.json().catch(() => ({}));
+        log(`Update profile: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`Update profile error: ${e.message}`, 'error'); }
+    }
+
+    async function signUp() {
+      const mobile = document.getElementById('authMobile').value;
+      const password = document.getElementById('authPassword').value;
+      if (!mobile || !password) { log('Введіть mobile і пароль', 'error'); return; }
+      try {
+        const r = await fetch(`${baseUrl()}/auth/sign-up`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mobile, password }) });
+        const data = await r.json().catch(() => ({}));
+        log(`Sign up: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+        if (data.user?.id) document.getElementById('userId').value = data.user.id;
+      } catch (e) { log(`Sign up error: ${e.message}`, 'error'); }
+    }
+
+    async function signIn() {
+      const mobile = document.getElementById('authMobile').value;
+      const password = document.getElementById('authPassword').value;
+      if (!mobile || !password) { log('Введіть mobile і пароль', 'error'); return; }
+      try {
+        const r = await fetch(`${baseUrl()}/auth/sign-in`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mobile, password }) });
+        const data = await r.json().catch(() => ({}));
+        log(`Sign in: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+        if (data.user?.id) document.getElementById('userId').value = data.user.id;
+      } catch (e) { log(`Sign in error: ${e.message}`, 'error'); }
+    }
+
+    async function createChat() {
+      const name = document.getElementById('chatName').value;
+      const isPrivate = document.getElementById('isPrivate').checked;
+      const isGroup = document.getElementById('isGroup').checked;
+      try {
+        const r = await fetch(`${baseUrl()}/chats`, { method: 'POST', headers: headers(), body: JSON.stringify({ name: name || 'Чат', isPrivate, isGroup }) });
+        const data = await r.json().catch(() => ({}));
+        log(`Create chat: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`Create chat error: ${e.message}`, 'error'); }
+    }
+
+    async function myChats() {
+      try {
+        const r = await fetch(`${baseUrl()}/chats`, { headers: headers() });
+        const data = await r.json().catch(() => ({}));
+        log(`My chats: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`My chats error: ${e.message}`, 'error'); }
+    }
+
+    async function searchPublic() {
+      const q = document.getElementById('searchQuery').value;
+      const url = `${baseUrl()}/chats/public${q ? `?search=${encodeURIComponent(q)}` : ''}`;
+      try {
+        const r = await fetch(url, { headers: headers() });
+        const data = await r.json().catch(() => ({}));
+        log(`Search public: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`Search public error: ${e.message}`, 'error'); }
+    }
+
+    async function joinChat() {
+      const id = document.getElementById('joinLeaveChatId').value;
+      if (!id) { log('Введіть Chat ID', 'error'); return; }
+      try {
+        const r = await fetch(`${baseUrl()}/chats/${id}/join`, { method: 'POST', headers: headers() });
+        const data = await r.json().catch(() => ({}));
+        log(`Join ${id}: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`Join error: ${e.message}`, 'error'); }
+    }
+
+    async function leaveChat() {
+      const id = document.getElementById('joinLeaveChatId').value;
+      if (!id) { log('Введіть Chat ID', 'error'); return; }
+      try {
+        const r = await fetch(`${baseUrl()}/chats/${id}/leave`, { method: 'POST', headers: headers() });
+        const data = await r.json().catch(() => ({}));
+        log(`Leave ${id}: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`Leave error: ${e.message}`, 'error'); }
+    }
+
+    async function sendMessageHttp() {
+      const chatId = document.getElementById('httpMsgChatId').value;
+      const content = document.getElementById('httpMsgContent').value;
+      if (!chatId) { log('Введіть Chat ID', 'error'); return; }
+      try {
+        const r = await fetch(`${baseUrl()}/messages`, { method: 'POST', headers: headers(), body: JSON.stringify({ chatId, content: content || '' }) });
+        const data = await r.json().catch(() => ({}));
+        log(`POST message: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`POST message error: ${e.message}`, 'error'); }
+    }
+
+    async function getMessagesHttp() {
+      const chatId = document.getElementById('getMsgChatId').value;
+      const url = chatId ? `${baseUrl()}/messages?chatId=${encodeURIComponent(chatId)}` : `${baseUrl()}/messages`;
+      try {
+        const r = await fetch(url, { headers: headers() });
+        const data = await r.json().catch(() => ({}));
+        log(`GET messages: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`GET messages error: ${e.message}`, 'error'); }
+    }
+
+    let socket = null;
+    function toggleWs() {
+      if (socket?.connected) {
+        socket.disconnect();
+        socket = null;
+        document.getElementById('wsStatus').textContent = 'disconnected';
+        document.getElementById('wsConnect').textContent = 'Підключити WS';
+        log('WebSocket disconnected', 'event');
+        return;
+      }
+      const url = baseUrl();
+      const uid = document.getElementById('userId').value;
+      if (!uid) { log('Введіть User ID перед підключенням WS', 'error'); return; }
+      log(`Connecting to ${url}…`, 'event');
+      socket = io(url, { query: { userId: uid } });
+      socket.on('connect', () => {
+        document.getElementById('wsStatus').textContent = 'connected';
+        document.getElementById('wsConnect').textContent = 'Відключити';
+        log('WebSocket connected', 'event');
+      });
+      socket.on('disconnect', () => {
+        document.getElementById('wsStatus').textContent = 'disconnected';
+        document.getElementById('wsConnect').textContent = 'Підключити WS';
+      });
+      socket.on('messageCreated', (data) => log(`messageCreated: ${JSON.stringify(data)}`, 'event'));
+      socket.on('userTyping', (data) => log(`userTyping: ${JSON.stringify(data)}`, 'event'));
+      socket.on('userOnline', (data) => log(`userOnline: ${JSON.stringify(data)}`, 'event'));
+      socket.on('userOffline', (data) => log(`userOffline: ${JSON.stringify(data)}`, 'event'));
+      socket.on('storyCreated', (data) => log(`storyCreated: ${JSON.stringify(data)}`, 'event'));
+      socket.on('locationShared', (data) => log(`locationShared: ${JSON.stringify(data)}`, 'event'));
+      socket.on('callStarted', (data) => log(`callStarted: ${JSON.stringify(data)}`, 'event'));
+      socket.on('callEnded', (data) => log(`callEnded: ${JSON.stringify(data)}`, 'event'));
+      socket.on('connect_error', (e) => log(`WS error: ${e.message}`, 'error'));
+    }
+
+    function joinChatRoom() {
+      const chatId = document.getElementById('wsChatId').value;
+      if (!socket?.connected) { log('Спочатку підключіть WS', 'error'); return; }
+      if (!chatId) { log('Введіть Chat ID', 'error'); return; }
+      socket.emit('joinChat', { chatId });
+      log(`joinChat ${chatId}`, 'sent');
+    }
+
+    function sendMessage() {
+      const chatId = document.getElementById('msgChatId').value;
+      const content = document.getElementById('msgContent').value;
+      const replyToId = document.getElementById('msgReplyToId').value;
+      if (!socket?.connected) { log('Спочатку підключіть WS', 'error'); return; }
+      if (!chatId) { log('Введіть Chat ID', 'error'); return; }
+      const payload = { chatId, content: content || undefined, replyToId: replyToId || undefined };
+      socket.emit('sendMessage', payload);
+      log(`sendMessage ${JSON.stringify(payload)}`, 'sent');
+    }
+
+    function startTyping() {
+      const chatId = document.getElementById('msgChatId').value;
+      if (!socket?.connected) { log('Спочатку підключіть WS', 'error'); return; }
+      if (!chatId) { log('Введіть Chat ID', 'error'); return; }
+      socket.emit('typingStart', { chatId });
+      log(`typingStart ${chatId}`, 'sent');
+    }
+
+    function stopTyping() {
+      const chatId = document.getElementById('msgChatId').value;
+      if (!socket?.connected) return;
+      if (!chatId) return;
+      socket.emit('typingStop', { chatId });
+    }
+
+    async function startCallHttp() {
+      const chatId = document.getElementById('callChatId').value;
+      if (!chatId) { log('Введіть Chat ID', 'error'); return; }
+      try {
+        const r = await fetch(`${baseUrl()}/calls`, { method: 'POST', headers: headers(), body: JSON.stringify({ chatId }) });
+        const data = await r.json().catch(() => ({}));
+        log(`Start call: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`Start call error: ${e.message}`, 'error'); }
+    }
+
+    async function createStoryHttp() {
+      const mediaUrl = document.getElementById('storyMediaUrl').value;
+      const caption = document.getElementById('storyCaption').value;
+      if (!mediaUrl) { log('Введіть URL медіа', 'error'); return; }
+      try {
+        const r = await fetch(`${baseUrl()}/stories`, { method: 'POST', headers: headers(), body: JSON.stringify({ mediaUrl, caption: caption || undefined }) });
+        const data = await r.json().catch(() => ({}));
+        log(`Create story: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`Create story error: ${e.message}`, 'error'); }
+    }
+
+    async function getStoriesHttp() {
+      try {
+        const r = await fetch(`${baseUrl()}/stories`, { headers: headers() });
+        const data = await r.json().catch(() => ({}));
+        log(`GET stories: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`GET stories error: ${e.message}`, 'error'); }
+    }
+
+    async function createFolderHttp() {
+      const name = document.getElementById('folderName').value;
+      try {
+        const r = await fetch(`${baseUrl()}/folders`, { method: 'POST', headers: headers(), body: JSON.stringify({ name: name || 'Папка' }) });
+        const data = await r.json().catch(() => ({}));
+        log(`Create folder: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`Create folder error: ${e.message}`, 'error'); }
+    }
+
+    async function myFoldersHttp() {
+      try {
+        const r = await fetch(`${baseUrl()}/folders`, { headers: headers() });
+        const data = await r.json().catch(() => ({}));
+        log(`GET folders: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`GET folders error: ${e.message}`, 'error'); }
+    }
+
+    async function addChatToFolder() {
+      const folderId = document.getElementById('folderId').value;
+      const chatId = document.getElementById('folderChatId').value;
+      if (!folderId || !chatId) { log('Введіть Folder ID та Chat ID', 'error'); return; }
+      try {
+        const r = await fetch(`${baseUrl()}/folders/${folderId}/chats/${chatId}`, { method: 'POST', headers: headers() });
+        const data = await r.json().catch(() => ({}));
+        log(`Add chat to folder: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`Add chat to folder error: ${e.message}`, 'error'); }
+    }
+
+    async function shareLocationHttp() {
+      const lat = parseFloat(document.getElementById('geoLat').value);
+      const lng = parseFloat(document.getElementById('geoLng').value);
+      if (Number.isNaN(lat) || Number.isNaN(lng)) { log('Введіть широту та довготу', 'error'); return; }
+      try {
+        const r = await fetch(`${baseUrl()}/geolocation/share`, { method: 'POST', headers: headers(), body: JSON.stringify({ lat, lng }) });
+        const data = await r.json().catch(() => ({}));
+        log(`Share location: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`Share location error: ${e.message}`, 'error'); }
+    }
+
+    async function getTodayRouteHttp() {
+      try {
+        const r = await fetch(`${baseUrl()}/geolocation/route/today`, { headers: headers() });
+        const data = await r.json().catch(() => ({}));
+        log(`Today route: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`Today route error: ${e.message}`, 'error'); }
+    }
+  </script>
+</body>
+</html>
