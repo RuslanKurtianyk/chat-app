@@ -6,10 +6,10 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
+import { forwardRef, Inject } from '@nestjs/common';
 import { Server } from 'socket.io';
 import { MessagesService } from './messages.service';
 import { ChatsService } from '../chats/chats.service';
-import { UsersService } from '../users/users.service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -17,9 +17,9 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   server: Server;
 
   constructor(
+    @Inject(forwardRef(() => MessagesService))
     private readonly messagesService: MessagesService,
     private readonly chatsService: ChatsService,
-    private readonly usersService: UsersService,
   ) {}
 
   handleConnection(client: any) {
@@ -28,6 +28,11 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   handleDisconnect() {}
+
+  /** Розсилка після збереження (HTTP upload / POST messages / WS). */
+  broadcastMessageCreated(chatId: string, msg: unknown) {
+    this.server.to(`chat:${chatId}`).emit('messageCreated', msg);
+  }
 
   @SubscribeMessage('joinChat')
   async handleJoinChat(
@@ -55,14 +60,60 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
     if (!userId) return { error: 'Identify with query userId' };
     if (!payload?.chatId) return { error: 'chatId required' };
     try {
-      await this.usersService.updateLastActive(userId);
       const msg = await this.messagesService.create(userId, {
         chatId: payload.chatId,
         content: payload.content ?? '',
         replyToId: payload.replyToId,
       });
-      this.server.to(`chat:${payload.chatId}`).emit('messageCreated', msg);
       return msg;
+    } catch (e: any) {
+      return { error: e.message || 'Send failed' };
+    }
+  }
+
+  /**
+   * Файл як base64 (обмежений розмір). Для великих файлів використовуйте POST /messages/upload.
+   */
+  @SubscribeMessage('sendMessageWithFile')
+  async sendMessageWithFile(
+    client: any,
+    @MessageBody()
+    payload: {
+      chatId: string;
+      base64: string;
+      fileName?: string;
+      mimeType?: string;
+      content?: string;
+      replyToId?: string;
+    },
+  ) {
+    const userId = client.data?.userId;
+    if (!userId) return { error: 'Identify with query userId' };
+    if (!payload?.chatId || !payload?.base64) {
+      return { error: 'chatId and base64 required' };
+    }
+    const maxWs = Number(process.env.WS_MAX_FILE_BYTES || 2 * 1024 * 1024);
+    let size: number;
+    try {
+      size = Buffer.byteLength(payload.base64, 'base64');
+    } catch {
+      return { error: 'Invalid base64' };
+    }
+    if (size > maxWs) {
+      return {
+        error: `File too large for WebSocket (max ${maxWs} B). Use POST /messages/upload.`,
+      };
+    }
+    try {
+      return await this.messagesService.createWithBase64File(
+        userId,
+        payload.chatId,
+        payload.base64,
+        payload.fileName || 'file',
+        payload.mimeType || 'application/octet-stream',
+        payload.content,
+        payload.replyToId,
+      );
     } catch (e: any) {
       return { error: e.message || 'Send failed' };
     }

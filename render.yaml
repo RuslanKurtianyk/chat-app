@@ -1,0 +1,35 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# Link repo → New Blueprint → select render.yaml
+
+services:
+  - type: web
+    name: chat-app
+    runtime: node
+    region: frankfurt # change if needed
+    plan: free # or starter
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Set in Render dashboard (sensitive) or use fromSecret:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: CLOUDINARY_FOLDER
+        value: chat-app
+      - key: CLOUDINARY_SECURE
+        value: "true"
+      # First deploy: set DATABASE_SYNC=true, deploy, create tables, then set false
+      - key: DATABASE_SYNC
+        value: "false"
+      - key: CORS_ORIGIN
+        sync: false

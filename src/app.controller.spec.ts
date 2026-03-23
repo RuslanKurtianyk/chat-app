@@ -19,4 +19,12 @@ describe('AppController', () => {
       expect(appController.getHello()).toBe('Hello World!');
     });
   });
+
+  describe('health', () => {
+    it('should return ok', () => {
+      const h = appController.health();
+      expect(h.ok).toBe(true);
+      expect(h.ts).toBeDefined();
+    });
+  });
 });

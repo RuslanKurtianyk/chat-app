@@ -9,4 +9,10 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
+
+  /** Render / load balancer health check */
+  @Get('health')
+  health() {
+    return { ok: true, ts: new Date().toISOString() };
+  }
 }

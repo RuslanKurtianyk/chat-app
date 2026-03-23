@@ -8,14 +8,64 @@ import {
   Delete,
   Headers,
   Query,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { MessagesService } from './messages.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
+import { UploadMessageFieldsDto } from './dto/upload-message.dto';
+import type { Express } from 'express';
+
+const maxUploadBytes = Number(
+  process.env.UPLOAD_MAX_FILE_BYTES || 25 * 1024 * 1024,
+);
 
 @Controller('messages')
 export class MessagesController {
   constructor(private readonly messagesService: MessagesService) {}
+
+  /**
+   * multipart/form-data: поле `file` + `chatId` (+ опційно `content`, `replyToId`).
+   * Бекенд завантажує файл у Cloudinary і зберігає URL (secure_url) у повідомленні.
+   */
+  @Post('upload')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: maxUploadBytes },
+    }),
+  )
+  async uploadAndCreateMessage(
+    @Headers('x-user-id') userId: string,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [new MaxFileSizeValidator({ maxSize: maxUploadBytes })],
+      }),
+    )
+    file: Express.Multer.File,
+    @Body() body: UploadMessageFieldsDto,
+  ) {
+    if (!userId) return { error: 'Missing X-User-Id' };
+    if (!body?.chatId) {
+      throw new BadRequestException('chatId обовʼязковий у тілі форми');
+    }
+    return this.messagesService.createWithUploadedFile(
+      userId,
+      file,
+      body.chatId,
+      body.content,
+      body.replyToId,
+    );
+  }
 
   @Post()
   async create(

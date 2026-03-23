@@ -79,6 +79,19 @@
   </section>
 
   <section>
+    <h2>Файл у чат (HTTP → бекенд → Cloudinary)</h2>
+    <p>Клієнт надсилає файл на <code>POST /messages/upload</code>; сервер завантажує в Cloudinary і записує <code>attachmentUrl</code> у повідомлення. Потрібні <code>CLOUDINARY_CLOUD_NAME</code>, <code>CLOUDINARY_API_KEY</code>, <code>CLOUDINARY_API_SECRET</code> на сервері.</p>
+    <div>
+      <input type="text" id="uploadMsgChatId" placeholder="Chat ID" style="width: 260px" />
+      <input type="text" id="uploadMsgCaption" placeholder="Підпис до файлу (опц.)" style="width: 200px" />
+    </div>
+    <div style="margin-top: 6px;">
+      <input type="file" id="uploadMsgFile" />
+      <button onclick="uploadMessageFile()">Надіслати файл</button>
+    </div>
+  </section>
+
+  <section>
     <h2>WebSocket – повідомлення та чати</h2>
     <div>
       <button id="wsConnect" onclick="toggleWs()">Підключити WS</button>
@@ -286,6 +299,29 @@
         const data = await r.json().catch(() => ({}));
         log(`GET messages: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
       } catch (e) { log(`GET messages error: ${e.message}`, 'error'); }
+    }
+
+    async function uploadMessageFile() {
+      const chatId = document.getElementById('uploadMsgChatId').value;
+      const fileInput = document.getElementById('uploadMsgFile');
+      const file = fileInput.files && fileInput.files[0];
+      const uid = document.getElementById('userId').value;
+      if (!uid) { log('Введіть User ID', 'error'); return; }
+      if (!chatId || !file) { log('Chat ID і файл обовʼязкові', 'error'); return; }
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('chatId', chatId);
+      const cap = document.getElementById('uploadMsgCaption').value;
+      if (cap) fd.append('content', cap);
+      try {
+        const r = await fetch(`${baseUrl()}/messages/upload`, {
+          method: 'POST',
+          headers: { 'X-User-Id': uid },
+          body: fd,
+        });
+        const data = await r.json().catch(() => ({}));
+        log(`POST /messages/upload: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`Upload error: ${e.message}`, 'error'); }
     }
 
     let socket = null;

@@ -1,25 +1,115 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  forwardRef,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import type { Express } from 'express';
 import { Message } from './entities/message.entity';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
+import { ChatsService } from '../chats/chats.service';
+import { CloudinaryService } from '../storage/cloudinary.service';
+import { UsersService } from '../users/users.service';
+import { MessagesGateway } from './messages.gateway';
 
 @Injectable()
 export class MessagesService {
   constructor(
     @InjectRepository(Message)
     private readonly messageRepo: Repository<Message>,
+    private readonly chatsService: ChatsService,
+    private readonly cloudinary: CloudinaryService,
+    private readonly usersService: UsersService,
+    @Inject(forwardRef(() => MessagesGateway))
+    private readonly messagesGateway: MessagesGateway,
   ) {}
 
+  private async notifyNewMessage(chatId: string, msg: Message) {
+    await this.usersService.updateLastActive(msg.userId);
+    this.messagesGateway.broadcastMessageCreated(chatId, msg);
+  }
+
   async create(userId: string, dto: CreateMessageDto): Promise<Message> {
+    const member = await this.chatsService.isMember(dto.chatId, userId);
+    if (!member) {
+      throw new ForbiddenException('Ви не учасник цього чату');
+    }
     const msg = this.messageRepo.create({
       chatId: dto.chatId,
       userId,
       content: dto.content,
       replyToId: dto.replyToId ?? null,
+      attachmentUrl: null,
+      attachmentMimeType: null,
+      originalFilename: null,
     });
-    return this.messageRepo.save(msg);
+    const saved = await this.messageRepo.save(msg);
+    await this.notifyNewMessage(dto.chatId, saved);
+    return saved;
+  }
+
+  /**
+   * Клієнт надсилає файл на бекенд → Cloudinary → URL у повідомленні.
+   */
+  async createWithUploadedFile(
+    userId: string,
+    file: Express.Multer.File,
+    chatId: string,
+    content?: string,
+    replyToId?: string,
+  ): Promise<Message> {
+    const member = await this.chatsService.isMember(chatId, userId);
+    if (!member) {
+      throw new ForbiddenException('Ви не учасник цього чату');
+    }
+
+    const { secureUrl } = await this.cloudinary.uploadBuffer(
+      file.buffer,
+      file.originalname,
+      file.mimetype,
+    );
+
+    const msg = this.messageRepo.create({
+      chatId,
+      userId,
+      content: content?.trim() ?? '',
+      replyToId: replyToId ?? null,
+      attachmentUrl: secureUrl,
+      attachmentMimeType: file.mimetype,
+      originalFilename: file.originalname,
+    });
+    const saved = await this.messageRepo.save(msg);
+    await this.notifyNewMessage(chatId, saved);
+    return saved;
+  }
+
+  /** Для WebSocket: base64 → той самий пайплайн (обмежений розмір). */
+  async createWithBase64File(
+    userId: string,
+    chatId: string,
+    base64: string,
+    fileName: string,
+    mimeType: string,
+    content?: string,
+    replyToId?: string,
+  ): Promise<Message> {
+    const buffer = Buffer.from(base64, 'base64');
+    const fakeFile = {
+      buffer,
+      originalname: fileName || 'file',
+      mimetype: mimeType || 'application/octet-stream',
+    } as Express.Multer.File;
+    return this.createWithUploadedFile(
+      userId,
+      fakeFile,
+      chatId,
+      content,
+      replyToId,
+    );
   }
 
   async findAll(): Promise<Message[]> {
