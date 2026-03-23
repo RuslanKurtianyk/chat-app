@@ -24,7 +24,7 @@ export class Story {
   caption: string | null;
 
   /** Час зникнення (наприклад 24 години) */
-  @Column({ name: 'expires_at', type: 'datetime' })
+  @Column({ name: 'expires_at', type: 'timestamp' })
   expiresAt: Date;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })

@@ -3,11 +3,21 @@
 ## 1. Supabase (PostgreSQL)
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. **Settings → Database → Connection string**  
-   - Use **URI**.  
-   - For a long‑running Node server on Render, **Session mode** (port `5432`) or **Transaction pooler** (port `6543`) both work; pooler is better at scale.
-3. Copy the connection string and replace `[YOUR-PASSWORD]` with the database password.
-4. Add to Render as **`DATABASE_URL`** (see below).
+2. **Settings → Database → Connection string** → вкладка / режим **URI**.
+
+### Render = IPv4-only → не Direct connection
+
+У дашборді Supabase для **Direct** часто видно підказку на кшталт **«Not IPv4 compatible»**: такий хост може бути **лише через IPv6**. **Render не маршрутизує IPv6** до зовнішніх сервісів → **`ENETUNREACH`** і нескінченні ретраї TypeORM.
+
+**Що робити (без платного IPv4 add-on):**
+
+- У тому ж розділі Connection string обери **Session pooler** (Supabase прямо рекомендує його для **IPv4-мереж**).
+- Скопіюй **URI** (хост зазвичай `*.pooler.supabase.com`, не `db.*.supabase.co`), підстав пароль замість `[YOUR-PASSWORD]`.
+- Встав у Render як **`DATABASE_URL`**.
+
+**Transaction pooler** (порт **6543**) теж підходить для багатьох бекендів на Node; якщо щось ламається з prepared statements / сесіями — спробуй **Session pooler** згідно з підказкою в UI.
+
+Платний **IPv4 add-on** у Supabase потрібен лише якщо свідомо хочеш саме **Direct** з IPv4-мережі.
 
 ### `ENETUNREACH` / IPv6 (`2a05:...:5432`)
 
@@ -24,6 +34,8 @@
 - Якщо для твого direct-хоста **взагалі немає A-запису**, лише AAAA — код відкотиться на звичайний `DATABASE_URL` і знову буде ENETUNREACH; тоді **обов’язково** pooler або інший host.
 
 Опційно: **`DATABASE_IPV4_LOOKUP=false`** — вимкнути резолв IPv4 у TypeORM (лише для діагностики). **`DATABASE_DNS_IPV4_FIRST=false`** — вимкнути лише крок 1.
+
+Якщо для **direct** `db.*.supabase.co` **ніде** немає A-запису (навіть через 1.1.1.1), застосунок при старті викине **зрозумілу помилку** — тоді **обов’язково** постав **`DATABASE_URL` з pooler** (нижче). Опційно свої DNS для резолву: **`DATABASE_DNS_SERVERS=1.1.1.1,8.8.8.8`**.
 
 ### First-time schema
 

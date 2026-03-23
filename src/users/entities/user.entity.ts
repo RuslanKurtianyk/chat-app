@@ -26,7 +26,7 @@ export class User {
   nickname: string | null;
 
   /** Остання активність (для індикатора) */
-  @Column({ name: 'last_active_at', type: 'datetime', nullable: true })
+  @Column({ name: 'last_active_at', type: 'timestamp', nullable: true })
   lastActiveAt: Date | null;
 
   @CreateDateColumn({ name: 'created_at' })

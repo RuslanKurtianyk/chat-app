@@ -25,10 +25,10 @@ export class Call {
   @Column({ type: 'varchar', length: 20, default: 'ringing' })
   status: CallStatus;
 
-  @Column({ name: 'started_at', type: 'datetime', nullable: true })
+  @Column({ name: 'started_at', type: 'timestamp', nullable: true })
   startedAt: Date | null;
 
-  @Column({ name: 'ended_at', type: 'datetime', nullable: true })
+  @Column({ name: 'ended_at', type: 'timestamp', nullable: true })
   endedAt: Date | null;
 
   @ManyToOne(() => Chat, { onDelete: 'CASCADE' })
