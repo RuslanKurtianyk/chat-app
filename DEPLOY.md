@@ -9,6 +9,16 @@
 3. Copy the connection string and replace `[YOUR-PASSWORD]` with the database password.
 4. Add to Render as **`DATABASE_URL`** (see below).
 
+### `ENETUNREACH` / IPv6 (`2a05:...:5432`)
+
+Якщо в логах з’єднання йде на **IPv6** і падає з **`ENETUNREACH`**, на Render зазвичай **немає маршруту до IPv6**. У цьому репо в **`main.ts`** за замовчуванням увімкнено **`dns.setDefaultResultOrder('ipv4first')`**, щоб `pg` брав **IPv4** з DNS, якщо він є.
+
+Якщо проблема лишається:
+
+- У Supabase візьми рядок підключення **Session pooler** або **Transaction pooler** (інший хост/порт, частіше стабільніший за direct).
+- Або в Render → Environment додай **`NODE_OPTIONS`** = `--dns-result-order=ipv4first` (дублює ефект; зазвичай не потрібно, якщо вже є правка в `main.ts`).
+- Тимчасово вимкнути пріоритет IPv4 у коді: **`DATABASE_DNS_IPV4_FIRST=false`**.
+
 ### First-time schema
 
 - With **`DATABASE_SYNC=false`** (default in production), TypeORM will **not** create tables.

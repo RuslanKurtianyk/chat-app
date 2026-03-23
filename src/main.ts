@@ -1,5 +1,12 @@
+import dns from 'node:dns';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+
+// Render та інші хости часто без IPv6: Supabase DNS дає AAAA → connect ENETUNREACH.
+// Пріоритет A-запису (IPv4) виправляє це. Вимкнути: DATABASE_DNS_IPV4_FIRST=false
+if (process.env.DATABASE_DNS_IPV4_FIRST !== 'false') {
+  dns.setDefaultResultOrder('ipv4first');
+}
 import { join } from 'path';
 import { mkdirSync, existsSync } from 'fs';
 import { NestExpressApplication } from '@nestjs/platform-express';
