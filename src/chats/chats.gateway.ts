@@ -3,10 +3,11 @@ import {
   WebSocketServer,
   SubscribeMessage,
   MessageBody,
+  ConnectedSocket,
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { ChatsService } from './chats.service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
@@ -16,16 +17,17 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   constructor(private readonly chatsService: ChatsService) {}
 
-  handleConnection(client: any) {
-    const userId = client.handshake?.query?.userId;
-    if (userId) client.data = { userId };
+  handleConnection(client: Socket) {
+    const raw = client.handshake?.query?.userId;
+    const userId = Array.isArray(raw) ? raw[0] : raw;
+    if (userId) client.data = { userId: String(userId) };
   }
 
   handleDisconnect() {}
 
   @SubscribeMessage('joinChat')
   async handleJoinChat(
-    client: any,
+    @ConnectedSocket() client: Socket,
     @MessageBody() payload: { chatId: string },
   ) {
     const userId = client.data?.userId;
@@ -42,7 +44,7 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('leaveChat')
   async handleLeaveChat(
-    client: any,
+    @ConnectedSocket() client: Socket,
     @MessageBody() payload: { chatId: string },
   ) {
     const userId = client.data?.userId;
@@ -53,19 +55,25 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('myChats')
-  async myChats(client: any) {
+  async myChats(@ConnectedSocket() client: Socket) {
     const userId = client.data?.userId;
     if (!userId) return { error: 'Identify with query userId' };
     return this.chatsService.findMyChats(userId);
   }
 
   @SubscribeMessage('searchPublicChats')
-  async searchPublic(client: any, @MessageBody() payload: { search?: string }) {
+  async searchPublic(
+    @ConnectedSocket() _client: Socket,
+    @MessageBody() payload: { search?: string },
+  ) {
     return this.chatsService.findPublic(payload?.search);
   }
 
   @SubscribeMessage('createChat')
-  async createChat(client: any, @MessageBody() dto: any) {
+  async createChat(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() dto: any,
+  ) {
     const userId = client.data?.userId;
     if (!userId) return { error: 'Identify with query userId' };
     return this.chatsService.create(userId, {

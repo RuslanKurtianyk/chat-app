@@ -3,8 +3,9 @@ import {
   WebSocketServer,
   SubscribeMessage,
   MessageBody,
+  ConnectedSocket,
 } from '@nestjs/websockets';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { GeolocationService } from './geolocation.service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
@@ -16,7 +17,7 @@ export class GeolocationGateway {
 
   @SubscribeMessage('shareLocation')
   async shareLocation(
-    client: any,
+    @ConnectedSocket() client: Socket,
     @MessageBody() payload: { lat: number; lng: number },
   ) {
     const userId = client.data?.userId;
@@ -32,7 +33,7 @@ export class GeolocationGateway {
   }
 
   @SubscribeMessage('getTodayRoute')
-  async getTodayRoute(client: any) {
+  async getTodayRoute(@ConnectedSocket() client: Socket) {
     const userId = client.data?.userId;
     if (!userId) return { error: 'Identify with query userId' };
     return this.geolocationService.getTodayRoute(userId);

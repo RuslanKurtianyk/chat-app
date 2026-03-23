@@ -15,6 +15,7 @@ import { ChatsService } from '../chats/chats.service';
 import { CloudinaryService } from '../storage/cloudinary.service';
 import { UsersService } from '../users/users.service';
 import { MessagesGateway } from './messages.gateway';
+import { toMessageWire } from './message.wire';
 
 @Injectable()
 export class MessagesService {
@@ -30,7 +31,7 @@ export class MessagesService {
 
   private async notifyNewMessage(chatId: string, msg: Message) {
     await this.usersService.updateLastActive(msg.userId);
-    this.messagesGateway.broadcastMessageCreated(chatId, msg);
+    this.messagesGateway.broadcastMessageCreated(chatId, toMessageWire(msg));
   }
 
   async create(userId: string, dto: CreateMessageDto): Promise<Message> {

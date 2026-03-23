@@ -3,8 +3,9 @@ import {
   WebSocketServer,
   SubscribeMessage,
   MessageBody,
+  ConnectedSocket,
 } from '@nestjs/websockets';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { StoriesService } from './stories.service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
@@ -16,7 +17,7 @@ export class StoriesGateway {
 
   @SubscribeMessage('createStory')
   async createStory(
-    client: any,
+    @ConnectedSocket() client: Socket,
     @MessageBody() payload: { mediaUrl: string; caption?: string; expiresInHours?: number },
   ) {
     const userId = client.data?.userId;
@@ -32,7 +33,10 @@ export class StoriesGateway {
   }
 
   @SubscribeMessage('getStories')
-  async getStories(client: any, @MessageBody() payload: { userId?: string }) {
+  async getStories(
+    @ConnectedSocket() _client: Socket,
+    @MessageBody() payload: { userId?: string },
+  ) {
     return this.storiesService.findActive(payload?.userId);
   }
 }

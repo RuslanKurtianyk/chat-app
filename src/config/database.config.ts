@@ -1,7 +1,11 @@
 import { registerAs } from '@nestjs/config';
 
 export default registerAs('database', () => {
-  const url = process.env.DATABASE_URL?.trim();
+  /** Локально: ігнорувати DATABASE_URL і взяти SQLite (не видаляючи рядок з .env). */
+  const forceSqlite =
+    process.env.FORCE_SQLITE === 'true' ||
+    process.env.LOCAL_USE_SQLITE === 'true';
+  const url = forceSqlite ? null : process.env.DATABASE_URL?.trim();
   const nodeEnv = process.env.NODE_ENV || 'development';
   const explicitSync = process.env.DATABASE_SYNC;
   const sync =

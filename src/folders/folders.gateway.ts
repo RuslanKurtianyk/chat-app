@@ -2,7 +2,9 @@ import {
   WebSocketGateway,
   SubscribeMessage,
   MessageBody,
+  ConnectedSocket,
 } from '@nestjs/websockets';
+import { Socket } from 'socket.io';
 import { FoldersService } from './folders.service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
@@ -10,14 +12,17 @@ export class FoldersGateway {
   constructor(private readonly foldersService: FoldersService) {}
 
   @SubscribeMessage('createFolder')
-  async createFolder(client: any, @MessageBody() payload: { name: string }) {
+  async createFolder(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { name: string },
+  ) {
     const userId = client.data?.userId;
     if (!userId) return { error: 'Identify with query userId' };
     return this.foldersService.create(userId, payload?.name ?? 'Folder');
   }
 
   @SubscribeMessage('myFolders')
-  async myFolders(client: any) {
+  async myFolders(@ConnectedSocket() client: Socket) {
     const userId = client.data?.userId;
     if (!userId) return { error: 'Identify with query userId' };
     return this.foldersService.findByUser(userId);
@@ -25,7 +30,7 @@ export class FoldersGateway {
 
   @SubscribeMessage('addChatToFolder')
   async addChat(
-    client: any,
+    @ConnectedSocket() client: Socket,
     @MessageBody() payload: { folderId: string; chatId: string },
   ) {
     const userId = client.data?.userId;
@@ -36,7 +41,7 @@ export class FoldersGateway {
 
   @SubscribeMessage('removeChatFromFolder')
   async removeChat(
-    client: any,
+    @ConnectedSocket() client: Socket,
     @MessageBody() payload: { folderId: string; chatId: string },
   ) {
     const userId = client.data?.userId;

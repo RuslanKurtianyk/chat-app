@@ -40,7 +40,8 @@
 ### Manual Web Service
 
 1. **New → Web Service**, connect this repo.
-2. **Build command:** `npm ci && npm run build`  
+2. **Build command:** `npm ci --include=dev && npm run build`  
+   (Якщо на сервісі задано `NODE_ENV=production`, звичайний `npm ci` **не** ставить devDependencies → **`nest: not found`**. Прапор `--include=dev` це виправляє.)  
    **Start command:** `npm run start:prod`
 3. **Health check path:** `/health`
 4. **Environment variables:**

@@ -4,7 +4,7 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { UsersService } from './users.service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
@@ -14,8 +14,11 @@ export class PresenceGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   constructor(private readonly usersService: UsersService) {}
 
-  async handleConnection(client: any) {
-    const userId = client.handshake?.query?.userId;
+  async handleConnection(client: Socket) {
+    const raw = client.handshake?.query?.userId;
+    const userId = raw
+      ? String(Array.isArray(raw) ? raw[0] : raw)
+      : null;
     if (userId) {
       client.data = { userId };
       await this.usersService.updateLastActive(userId);
@@ -23,7 +26,7 @@ export class PresenceGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
   }
 
-  async handleDisconnect(client: any) {
+  async handleDisconnect(client: Socket) {
     const userId = client.data?.userId;
     if (userId) {
       this.server.emit('userOffline', { userId, at: new Date() });

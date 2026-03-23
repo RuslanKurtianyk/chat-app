@@ -7,7 +7,8 @@ services:
     runtime: node
     region: frankfurt # change if needed
     plan: free # or starter
-    buildCommand: npm ci && npm run build
+    # NODE_ENV=production змушує npm пропустити devDependencies — тоді немає `nest` для збірки
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm run start:prod
     healthCheckPath: /health
     envVars:

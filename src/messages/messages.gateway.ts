@@ -3,18 +3,22 @@ import {
   WebSocketServer,
   SubscribeMessage,
   MessageBody,
+  ConnectedSocket,
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import { forwardRef, Inject } from '@nestjs/common';
-import { Server } from 'socket.io';
+import { forwardRef, Inject, Logger } from '@nestjs/common';
+import { Server, Socket } from 'socket.io';
 import { MessagesService } from './messages.service';
 import { ChatsService } from '../chats/chats.service';
+import { toMessageWire } from './message.wire';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
+
+  private readonly logger = new Logger(MessagesGateway.name);
 
   constructor(
     @Inject(forwardRef(() => MessagesService))
@@ -22,9 +26,10 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
     private readonly chatsService: ChatsService,
   ) {}
 
-  handleConnection(client: any) {
-    const userId = client.handshake?.query?.userId;
-    if (userId) client.data = { userId };
+  handleConnection(client: Socket) {
+    const raw = client.handshake?.query?.userId;
+    const userId = Array.isArray(raw) ? raw[0] : raw;
+    if (userId) client.data = { userId: String(userId) };
   }
 
   handleDisconnect() {}
@@ -36,7 +41,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   @SubscribeMessage('joinChat')
   async handleJoinChat(
-    client: any,
+    @ConnectedSocket() client: Socket,
     @MessageBody() payload: { chatId: string },
   ) {
     const userId = client.data?.userId;
@@ -52,7 +57,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   @SubscribeMessage('sendMessage')
   async handleSendMessage(
-    client: any,
+    @ConnectedSocket() client: Socket,
     @MessageBody()
     payload: { chatId: string; content?: string; replyToId?: string },
   ) {
@@ -65,9 +70,10 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
         content: payload.content ?? '',
         replyToId: payload.replyToId,
       });
-      return msg;
+      return toMessageWire(msg);
     } catch (e: any) {
-      return { error: e.message || 'Send failed' };
+      this.logger.warn(`sendMessage failed: ${e?.message || e}`);
+      return { error: e?.message || e?.toString?.() || 'Send failed' };
     }
   }
 
@@ -76,7 +82,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
    */
   @SubscribeMessage('sendMessageWithFile')
   async sendMessageWithFile(
-    client: any,
+    @ConnectedSocket() client: Socket,
     @MessageBody()
     payload: {
       chatId: string;
@@ -105,7 +111,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
       };
     }
     try {
-      return await this.messagesService.createWithBase64File(
+      const msg = await this.messagesService.createWithBase64File(
         userId,
         payload.chatId,
         payload.base64,
@@ -114,14 +120,16 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
         payload.content,
         payload.replyToId,
       );
+      return toMessageWire(msg);
     } catch (e: any) {
-      return { error: e.message || 'Send failed' };
+      this.logger.warn(`sendMessageWithFile failed: ${e?.message || e}`);
+      return { error: e?.message || e?.toString?.() || 'Send failed' };
     }
   }
 
   @SubscribeMessage('typingStart')
   async typingStart(
-    client: any,
+    @ConnectedSocket() client: Socket,
     @MessageBody() payload: { chatId: string },
   ) {
     const userId = client.data?.userId;
@@ -135,7 +143,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   @SubscribeMessage('typingStop')
   async typingStop(
-    client: any,
+    @ConnectedSocket() client: Socket,
     @MessageBody() payload: { chatId: string },
   ) {
     const userId = client.data?.userId;
@@ -148,7 +156,10 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   @SubscribeMessage('getMessages')
-  async getMessages(client: any, @MessageBody() payload: { chatId: string }) {
+  async getMessages(
+    @ConnectedSocket() _client: Socket,
+    @MessageBody() payload: { chatId: string },
+  ) {
     if (!payload?.chatId) return [];
     return this.messagesService.findByChat(payload.chatId);
   }

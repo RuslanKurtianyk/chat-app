@@ -3,8 +3,9 @@ import {
   WebSocketServer,
   SubscribeMessage,
   MessageBody,
+  ConnectedSocket,
 } from '@nestjs/websockets';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { CallsService } from './calls.service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
@@ -16,18 +17,21 @@ export class CallsGateway {
 
   @SubscribeMessage('startCall')
   async startCall(
-    client: any,
+    @ConnectedSocket() client: Socket,
     @MessageBody() payload: { chatId: string },
   ) {
     const userId = client.data?.userId;
     if (!userId || !payload?.chatId) return { error: 'userId and chatId required' };
     const call = await this.callsService.create(payload.chatId, userId);
-    client.server?.to(`chat:${payload.chatId}`).emit('callStarted', call);
+    this.server.to(`chat:${payload.chatId}`).emit('callStarted', call);
     return call;
   }
 
   @SubscribeMessage('endCall')
-  async endCall(client: any, @MessageBody() payload: { callId: string }) {
+  async endCall(
+    @ConnectedSocket() _client: Socket,
+    @MessageBody() payload: { callId: string },
+  ) {
     if (!payload?.callId) return { error: 'callId required' };
     const call = await this.callsService.end(payload.callId);
     this.server.emit('callEnded', call);
@@ -36,7 +40,7 @@ export class CallsGateway {
 
   @SubscribeMessage('callSignal')
   async callSignal(
-    client: any,
+    @ConnectedSocket() _client: Socket,
     @MessageBody() payload: { callId: string; signal: any },
   ) {
     this.server.emit('callSignal', payload);

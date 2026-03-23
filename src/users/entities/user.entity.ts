@@ -18,11 +18,11 @@ export class User {
   passwordHash: string;
 
   /** Логотип/аватар (URL) */
-  @Column({ name: 'avatar_url', nullable: true })
+  @Column({ name: 'avatar_url', type: 'text', nullable: true })
   avatarUrl: string | null;
 
   /** Нікнейм */
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', length: 50, nullable: true })
   nickname: string | null;
 
   /** Остання активність (для індикатора) */
