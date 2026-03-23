@@ -34,3 +34,6 @@ services:
         value: "false"
       - key: CORS_ORIGIN
         sync: false
+      # Дозволити локальний фронт (Vite/React) ходити на Render API + WebSocket
+      - key: CORS_ALLOW_LOCALHOST
+        value: "false"

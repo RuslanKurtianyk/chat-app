@@ -58,7 +58,8 @@
 | `CLOUDINARY_API_SECRET` | Yes | Cloudinary API secret |
 | `CLOUDINARY_FOLDER` | No | Folder in Cloudinary (default `chat-app`) |
 | `CLOUDINARY_SECURE` | No | `true` (default) |
-| `CORS_ORIGIN` | If browser calls API | e.g. `https://your-frontend.com` |
+| `CORS_ORIGIN` | If browser calls API | Через кому: прод-фронт + за потреби `http://localhost:5173` |
+| `CORS_ALLOW_LOCALHOST` | Опційно | `true` — дозволити типові `http://localhost:*` / `127.0.0.1` (див. `src/cors-settings.ts`) разом із `CORS_ORIGIN` |
 | `PORT` | No | Set by Render |
 
 5. **WebSockets:** Render supports WebSockets on HTTP services; use the same URL as REST (e.g. `wss://your-service.onrender.com`) for Socket.IO.

@@ -2,8 +2,9 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { join } from 'path';
 import { mkdirSync, existsSync } from 'fs';
-import { IoAdapter } from '@nestjs/platform-socket.io';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { AppSocketIoAdapter } from './socket-io.adapter';
+import { getCorsMode } from './cors-settings';
 
 async function bootstrap() {
   if (!process.env.DATABASE_URL?.trim()) {
@@ -12,18 +13,17 @@ async function bootstrap() {
   }
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  app.useWebSocketAdapter(new IoAdapter(app));
+  app.useWebSocketAdapter(new AppSocketIoAdapter(app));
   app.useStaticAssets(join(__dirname, '..', 'client'));
 
-  const corsOrigin = process.env.CORS_ORIGIN?.trim();
-  if (corsOrigin) {
-    const origins = corsOrigin.split(',').map((o) => o.trim()).filter(Boolean);
-    app.enableCors({
-      origin: origins.length === 1 ? origins[0] : origins,
-      credentials: true,
-    });
-  } else {
+  const corsMode = getCorsMode();
+  if (corsMode.mode === 'permissive') {
     app.enableCors();
+  } else {
+    app.enableCors({
+      origin: corsMode.origin,
+      credentials: corsMode.credentials,
+    });
   }
 
   await app.listen(process.env.PORT ?? 3000);
