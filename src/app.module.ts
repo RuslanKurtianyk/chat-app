@@ -14,6 +14,7 @@ import { GeolocationModule } from './geolocation/geolocation.module';
 import { StorageModule } from './storage/storage.module';
 import databaseConfig from './config/database.config';
 import cloudinaryConfig from './config/cloudinary.config';
+import { resolvePostgresToIpv4Host } from './config/postgres-ipv4-host';
 import { User } from './users/entities/user.entity';
 import { Chat } from './chats/entities/chat.entity';
 import { ChatMember } from './chats/entities/chat-member.entity';
@@ -45,7 +46,7 @@ const typeOrmEntities = [
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
+      useFactory: async (config: ConfigService) => {
         const db = config.get<{
           url: string | null;
           synchronize: boolean;
@@ -53,15 +54,31 @@ const typeOrmEntities = [
         }>('database');
 
         if (db?.url) {
+          const pool = {
+            max: Number(process.env.DATABASE_POOL_MAX || 10),
+          };
+          const resolved = await resolvePostgresToIpv4Host(db.url, db.ssl);
+          if (resolved.mode === 'url') {
+            return {
+              type: 'postgres' as const,
+              url: resolved.url,
+              entities: typeOrmEntities,
+              synchronize: db.synchronize,
+              ssl: resolved.ssl,
+              extra: pool,
+            };
+          }
           return {
             type: 'postgres' as const,
-            url: db.url,
+            host: resolved.host,
+            port: resolved.port,
+            username: resolved.username,
+            password: resolved.password,
+            database: resolved.database,
             entities: typeOrmEntities,
             synchronize: db.synchronize,
-            ssl: db.ssl,
-            extra: {
-              max: Number(process.env.DATABASE_POOL_MAX || 10),
-            },
+            ssl: resolved.ssl,
+            extra: pool,
           };
         }
 

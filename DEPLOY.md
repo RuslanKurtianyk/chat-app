@@ -11,13 +11,19 @@
 
 ### `ENETUNREACH` / IPv6 (`2a05:...:5432`)
 
-Якщо в логах з’єднання йде на **IPv6** і падає з **`ENETUNREACH`**, на Render зазвичай **немає маршруту до IPv6**. У цьому репо в **`main.ts`** за замовчуванням увімкнено **`dns.setDefaultResultOrder('ipv4first')`**, щоб `pg` брав **IPv4** з DNS, якщо він є.
+На Render часто **немає IPv6**; деякі хости Supabase в DNS мають **лише AAAA** — тоді **`ipv4first` не допомагає** (немає A-запису), і `pg` усе одно йде в IPv6.
 
-Якщо проблема лишається:
+У проєкті зроблено два кроки:
 
-- У Supabase візьми рядок підключення **Session pooler** або **Transaction pooler** (інший хост/порт, частіше стабільніший за direct).
-- Або в Render → Environment додай **`NODE_OPTIONS`** = `--dns-result-order=ipv4first` (дублює ефект; зазвичай не потрібно, якщо вже є правка в `main.ts`).
-- Тимчасово вимкнути пріоритет IPv4 у коді: **`DATABASE_DNS_IPV4_FIRST=false`**.
+1. **`main.ts`**: `dns.setDefaultResultOrder('ipv4first')` — якщо є і A, і AAAA.
+2. **`app.module` + `postgres-ipv4-host.ts`**: перед підключенням TypeORM викликається **`dns.promises.lookup(host, { family: 4 })`**; якщо знайдено IPv4, з’єднання йде **на IP**, а для TLS у **`ssl.servername`** лишається **оригінальний hostname** (сертифікат Supabase валідний).
+
+Якщо після деплою все одно помилка:
+
+- У Supabase візьми URI **Transaction pooler** (порт **6543**) або **Session pooler** — у них часто інший DNS з нормальним IPv4.
+- Якщо для твого direct-хоста **взагалі немає A-запису**, лише AAAA — код відкотиться на звичайний `DATABASE_URL` і знову буде ENETUNREACH; тоді **обов’язково** pooler або інший host.
+
+Опційно: **`DATABASE_IPV4_LOOKUP=false`** — вимкнути резолв IPv4 у TypeORM (лише для діагностики). **`DATABASE_DNS_IPV4_FIRST=false`** — вимкнути лише крок 1.
 
 ### First-time schema
 
