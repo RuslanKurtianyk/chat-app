@@ -10,10 +10,11 @@ export class AppSocketIoAdapter extends IoAdapter {
 
   createIOServer(port: number, options?: ServerOptions) {
     const cors = getSocketIoCorsOptions();
-    const merged: ServerOptions = {
+    // Spread optional `options` widens e.g. `path` to `string | undefined`; assert for socket.io's ServerOptions.
+    const merged = {
       ...options,
       cors,
-    };
+    } as ServerOptions;
     return super.createIOServer(port, merged);
   }
 }
