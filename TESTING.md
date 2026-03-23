@@ -38,7 +38,33 @@ Example pattern:
 
 ---
 
-## 3. Manual testing with the minimal client
+## 3. Local check: connect to Supabase (Postgres)
+
+Use the same **`DATABASE_URL`** as on Render (бажано **Session / Transaction pooler**, не Direct `db.*`, якщо у тебе IPv4-only).
+
+1. У **`.env`** задай `DATABASE_URL` і **прибери** примусовий SQLite, якщо був:
+   - `FORCE_SQLITE=false` або видали рядок
+   - `LOCAL_USE_SQLITE=false` або видали рядок  
+2. Для першого підключення локально зручно **`NODE_ENV=development`** (або явно `DATABASE_SYNC=true` один раз), щоб TypeORM міг створити таблиці; у проді на Render тримай `DATABASE_SYNC=false`.
+3. Швидка перевірка лише мережі + логін до БД (без Nest):
+
+```bash
+npm run check:db
+```
+
+Очікування: рядок `OK — connected to Postgres:` з полями `ok`, `database`, `user`. Якщо помилка — перевір URI в Supabase (pooler) і пароль.
+
+4. Повна перевірка з TypeORM (як на сервері):
+
+```bash
+npm run start:dev
+```
+
+У логах не повинно бути `Unable to connect to the database`; далі відкрий `http://localhost:3000/health` (перевіряє лише процес, не БД) або викликай будь-який REST-ендпоінт, що читає з БД.
+
+---
+
+## 4. Manual testing with the minimal client
 
 For clicking around in the browser without writing your own app:
 
@@ -56,5 +82,6 @@ For clicking around in the browser without writing your own app:
 | Goal                    | Use this                         | Write a client?   |
 |-------------------------|----------------------------------|--------------------|
 | CI / automated checks   | Unit + E2E tests                 | No                 |
+| Supabase / Postgres URL | `npm run check:db`               | No                 |
 | Quick manual check      | Minimal client (test-client.html)| No (it’s provided) |
 | Real product UI         | Your own frontend                | Yes (later)        |

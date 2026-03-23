@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Chat } from '../chats/entities/chat.entity';
+import { User } from '../users/entities/user.entity';
 import { Folder } from './entities/folder.entity';
 import { FolderChat } from './entities/folder-chat.entity';
 
@@ -14,7 +16,10 @@ export class FoldersService {
   ) {}
 
   async create(userId: string, name: string): Promise<Folder> {
-    const folder = this.folderRepo.create({ userId, name });
+    const folder = this.folderRepo.create({
+      user: { id: userId } as User,
+      name,
+    });
     return this.folderRepo.save(folder);
   }
 
@@ -38,7 +43,10 @@ export class FoldersService {
     if (!folder) throw new NotFoundException('Folder not found');
     const existing = await this.folderChatRepo.findOne({ where: { folderId, chatId } });
     if (existing) return existing;
-    const fc = this.folderChatRepo.create({ folderId, chatId });
+    const fc = this.folderChatRepo.create({
+      folder: { id: folderId } as Folder,
+      chat: { id: chatId } as Chat,
+    });
     return this.folderChatRepo.save(fc);
   }
 

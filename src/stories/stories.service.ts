@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan } from 'typeorm';
+import { User } from '../users/entities/user.entity';
 import { Story } from './entities/story.entity';
 
 @Injectable()
@@ -19,7 +20,7 @@ export class StoriesService {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + expiresInHours);
     const story = this.storyRepo.create({
-      userId,
+      user: { id: userId } as User,
       mediaUrl,
       caption: caption ?? null,
       expiresAt,

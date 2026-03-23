@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  RelationId,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
@@ -12,9 +13,6 @@ import { User } from '../../users/entities/user.entity';
 export class Story {
   @PrimaryGeneratedColumn('uuid')
   id: string;
-
-  @Column({ name: 'user_id', type: 'varchar', length: 36 })
-  userId: string;
 
   /** URL медіа (зображення/відео) */
   @Column({ name: 'media_url' })
@@ -30,6 +28,9 @@ export class Story {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
+
+  @RelationId((s: Story) => s.user)
+  userId: string;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

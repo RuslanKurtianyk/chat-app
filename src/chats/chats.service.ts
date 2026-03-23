@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { User } from '../users/entities/user.entity';
 import { Chat } from './entities/chat.entity';
 import { ChatMember } from './entities/chat-member.entity';
 import { CreateChatDto } from './dto/create-chat.dto';
@@ -20,11 +21,14 @@ export class ChatsService {
       name: dto.name,
       isPrivate: dto.isPrivate ?? false,
       isGroup: dto.isGroup ?? false,
-      ownerId,
+      owner: { id: ownerId } as User,
     });
     const saved = await this.chatRepo.save(chat);
     await this.memberRepo.save(
-      this.memberRepo.create({ chatId: saved.id, userId: ownerId }),
+      this.memberRepo.create({
+        chat: { id: saved.id } as Chat,
+        user: { id: ownerId } as User,
+      }),
     );
     return saved;
   }
@@ -63,7 +67,12 @@ export class ChatsService {
       where: { chatId, userId },
     });
     if (existing) return { joined: true };
-    await this.memberRepo.save(this.memberRepo.create({ chatId, userId }));
+    await this.memberRepo.save(
+      this.memberRepo.create({
+        chat: { id: chatId } as Chat,
+        user: { id: userId } as User,
+      }),
+    );
     return { joined: true };
   }
 
@@ -80,7 +89,7 @@ export class ChatsService {
   async update(id: string, userId: string, dto: UpdateChatDto): Promise<Chat> {
     const chat = await this.findOne(id);
     if (!chat) throw new NotFoundException('Chat not found');
-    if (chat.ownerId !== userId) throw new ForbiddenException('Not owner');
+    if (chat.owner?.id !== userId) throw new ForbiddenException('Not owner');
     Object.assign(chat, dto);
     return this.chatRepo.save(chat);
   }
@@ -88,7 +97,7 @@ export class ChatsService {
   async remove(id: string, userId: string): Promise<void> {
     const chat = await this.findOne(id);
     if (!chat) throw new NotFoundException('Chat not found');
-    if (chat.ownerId !== userId) throw new ForbiddenException('Not owner');
+    if (chat.owner?.id !== userId) throw new ForbiddenException('Not owner');
     await this.chatRepo.delete(id);
   }
 }

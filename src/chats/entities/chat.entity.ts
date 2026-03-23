@@ -5,7 +5,7 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
-  OneToMany,
+  RelationId,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
@@ -25,12 +25,13 @@ export class Chat {
   @Column({ name: 'is_group', default: false })
   isGroup: boolean;
 
-  @Column({ name: 'owner_id', type: 'varchar', length: 36 })
-  ownerId: string;
-
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'owner_id' })
   owner: User;
+
+  /** FK до owner_id (без окремого @Column з length — конфлікт uuid у Postgres). */
+  @RelationId((chat: Chat) => chat.owner)
+  ownerId: string;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

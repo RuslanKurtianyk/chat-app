@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Chat } from '../chats/entities/chat.entity';
+import { User } from '../users/entities/user.entity';
 import { Call } from './entities/call.entity';
-import { CallStatus } from './entities/call.entity';
 
 @Injectable()
 export class CallsService {
@@ -13,8 +14,8 @@ export class CallsService {
 
   async create(chatId: string, initiatorId: string): Promise<Call> {
     const call = this.callRepo.create({
-      chatId,
-      initiatorId,
+      chat: { id: chatId } as Chat,
+      initiator: { id: initiatorId } as User,
       status: 'ringing',
     });
     return this.callRepo.save(call);

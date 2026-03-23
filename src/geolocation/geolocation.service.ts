@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
+import { User } from '../users/entities/user.entity';
 import { LocationPoint } from './entities/location-point.entity';
 
 @Injectable()
@@ -12,7 +13,7 @@ export class GeolocationService {
 
   async shareLocation(userId: string, lat: number, lng: number): Promise<LocationPoint> {
     const point = this.locationRepo.create({
-      userId,
+      user: { id: userId } as User,
       lat,
       lng,
       sharedAt: new Date(),

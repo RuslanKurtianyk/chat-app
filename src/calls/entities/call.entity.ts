@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  RelationId,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Chat } from '../../chats/entities/chat.entity';
@@ -15,12 +16,6 @@ export type CallStatus = 'ringing' | 'active' | 'ended';
 export class Call {
   @PrimaryGeneratedColumn('uuid')
   id: string;
-
-  @Column({ name: 'chat_id', type: 'varchar', length: 36 })
-  chatId: string;
-
-  @Column({ name: 'initiator_id', type: 'varchar', length: 36 })
-  initiatorId: string;
 
   @Column({ type: 'varchar', length: 20, default: 'ringing' })
   status: CallStatus;
@@ -38,6 +33,12 @@ export class Call {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'initiator_id' })
   initiator: User;
+
+  @RelationId((c: Call) => c.chat)
+  chatId: string;
+
+  @RelationId((c: Call) => c.initiator)
+  initiatorId: string;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

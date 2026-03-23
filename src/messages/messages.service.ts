@@ -8,6 +8,8 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import type { Express } from 'express';
+import { Chat } from '../chats/entities/chat.entity';
+import { User } from '../users/entities/user.entity';
 import { Message } from './entities/message.entity';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
@@ -40,8 +42,8 @@ export class MessagesService {
       throw new ForbiddenException('Ви не учасник цього чату');
     }
     const msg = this.messageRepo.create({
-      chatId: dto.chatId,
-      userId,
+      chat: { id: dto.chatId } as Chat,
+      user: { id: userId } as User,
       content: dto.content,
       replyToId: dto.replyToId ?? null,
       attachmentUrl: null,
@@ -75,8 +77,8 @@ export class MessagesService {
     );
 
     const msg = this.messageRepo.create({
-      chatId,
-      userId,
+      chat: { id: chatId } as Chat,
+      user: { id: userId } as User,
       content: content?.trim() ?? '',
       replyToId: replyToId ?? null,
       attachmentUrl: secureUrl,

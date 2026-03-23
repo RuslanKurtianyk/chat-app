@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  RelationId,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Chat } from '../../chats/entities/chat.entity';
@@ -13,12 +14,6 @@ import { Chat } from '../../chats/entities/chat.entity';
 export class Message {
   @PrimaryGeneratedColumn('uuid')
   id: string;
-
-  @Column({ name: 'chat_id', type: 'varchar', length: 36 })
-  chatId: string;
-
-  @Column({ name: 'user_id', type: 'varchar', length: 36 })
-  userId: string;
 
   @Column({ type: 'text' })
   content: string;
@@ -33,7 +28,8 @@ export class Message {
   @Column({ name: 'original_filename', type: 'varchar', length: 512, nullable: true })
   originalFilename: string | null;
 
-  @Column({ name: 'reply_to_id', type: 'varchar', length: 36, nullable: true })
+  /** Опційне посилання на інше повідомлення (без окремого JoinColumn — уникаємо self-relation + length/uuid). */
+  @Column({ name: 'reply_to_id', type: 'varchar', nullable: true })
   replyToId: string | null;
 
   @ManyToOne(() => Chat, { onDelete: 'CASCADE' })
@@ -43,6 +39,12 @@ export class Message {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
+
+  @RelationId((m: Message) => m.chat)
+  chatId: string;
+
+  @RelationId((m: Message) => m.user)
+  userId: string;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  RelationId,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
@@ -12,9 +13,6 @@ import { User } from '../../users/entities/user.entity';
 export class LocationPoint {
   @PrimaryGeneratedColumn('uuid')
   id: string;
-
-  @Column({ name: 'user_id', type: 'varchar', length: 36 })
-  userId: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 7 })
   lat: number;
@@ -28,6 +26,9 @@ export class LocationPoint {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
+
+  @RelationId((p: LocationPoint) => p.user)
+  userId: string;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
