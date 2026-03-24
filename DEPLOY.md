@@ -86,8 +86,22 @@
 | `CLOUDINARY_API_SECRET` | Yes | Cloudinary API secret |
 | `CLOUDINARY_FOLDER` | No | Folder in Cloudinary (default `chat-app`) |
 | `CLOUDINARY_SECURE` | No | `true` (default) |
-| `CORS_ORIGIN` | If browser calls API | Через кому: прод-фронт + за потреби `http://localhost:5173` |
-| `CORS_ALLOW_LOCALHOST` | Опційно | `true` — дозволити типові `http://localhost:*` / `127.0.0.1` (див. `src/cors-settings.ts`) разом із `CORS_ORIGIN` |
+| `CORS_ORIGIN` | If browser calls API | Через кому: **точний** `Origin` фронту (без шляху в кінці). Приклад: `https://your-api.onrender.com,https://ruslankurtianyk.github.io` — другий пункт потрібен для **GitHub Pages**. |
+| `CORS_ALLOW_LOCALHOST` | Опційно | `true` — додати типові `http://localhost:*` / `127.0.0.1` до списку разом із `CORS_ORIGIN` |
+
+### CORS і GitHub Pages (`*.github.io`)
+
+Браузер шле заголовок **`Origin: https://ruslankurtianyk.github.io`** (без `/` в кінці, без шляху до репо). Якщо на Render задано **`CORS_ORIGIN`** без цього значення, зі сторінки на GitHub буде **CORS error**.
+
+1. Render → твій Web Service → **Environment**.
+2. **`CORS_ORIGIN`** = через кому всі дозволені фронти, наприклад:  
+   `https://<твій-сервіс>.onrender.com,https://ruslankurtianyk.github.io`  
+   (якщо HTML на GitHub лише кличе API на Render, достатньо одного `https://ruslankurtianyk.github.io` — але зазвичай лишають і Render, якщо звідти теж відкривають клієнт.)
+3. **Save** → **Manual Deploy** (або дочекайся redeploy).
+
+У тестовому HTML на GitHub у полі **API base** має бути **`https://<твій-сервіс>.onrender.com`** (HTTPS, без слешу в кінці). Socket.IO піде на той самий хост.
+
+Якщо **`CORS_ORIGIN` порожній** — у коді вмикається permissive CORS і GitHub має проходити; проблема з’являється саме коли список origin **явний**, але без `github.io`.
 | `PORT` | No | Set by Render |
 
 5. **WebSockets:** Render supports WebSockets on HTTP services; use the same URL as REST (e.g. `wss://your-service.onrender.com`) for Socket.IO.

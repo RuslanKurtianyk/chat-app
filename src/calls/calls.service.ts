@@ -30,7 +30,7 @@ export class CallsService {
 
   async findByChat(chatId: string): Promise<Call | null> {
     return this.callRepo.findOne({
-      where: { chatId, status: 'ringing' },
+      where: { chat: { id: chatId }, status: 'ringing' },
       order: { createdAt: 'DESC' },
     });
   }

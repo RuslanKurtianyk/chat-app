@@ -25,23 +25,27 @@ export class FoldersService {
 
   async findByUser(userId: string): Promise<Folder[]> {
     return this.folderRepo.find({
-      where: { userId },
+      where: { user: { id: userId } },
       order: { order: 'ASC', createdAt: 'ASC' },
     });
   }
 
   async findOne(id: string, userId: string): Promise<Folder | null> {
     const folder = await this.folderRepo.findOne({
-      where: { id, userId },
+      where: { id, user: { id: userId } },
       relations: ['user'],
     });
     return folder;
   }
 
   async addChat(folderId: string, chatId: string, userId: string): Promise<FolderChat> {
-    const folder = await this.folderRepo.findOne({ where: { id: folderId, userId } });
+    const folder = await this.folderRepo.findOne({
+      where: { id: folderId, user: { id: userId } },
+    });
     if (!folder) throw new NotFoundException('Folder not found');
-    const existing = await this.folderChatRepo.findOne({ where: { folderId, chatId } });
+    const existing = await this.folderChatRepo.findOne({
+      where: { folder: { id: folderId }, chat: { id: chatId } },
+    });
     if (existing) return existing;
     const fc = this.folderChatRepo.create({
       folder: { id: folderId } as Folder,
@@ -51,20 +55,31 @@ export class FoldersService {
   }
 
   async removeChat(folderId: string, chatId: string, userId: string): Promise<void> {
-    const folder = await this.folderRepo.findOne({ where: { id: folderId, userId } });
+    const folder = await this.folderRepo.findOne({
+      where: { id: folderId, user: { id: userId } },
+    });
     if (!folder) throw new NotFoundException('Folder not found');
-    await this.folderChatRepo.delete({ folderId, chatId });
+    await this.folderChatRepo
+      .createQueryBuilder()
+      .delete()
+      .from(FolderChat)
+      .where('folder_id = :folderId AND chat_id = :chatId', { folderId, chatId })
+      .execute();
   }
 
   async update(id: string, userId: string, name: string): Promise<Folder> {
-    const folder = await this.folderRepo.findOne({ where: { id, userId } });
+    const folder = await this.folderRepo.findOne({
+      where: { id, user: { id: userId } },
+    });
     if (!folder) throw new NotFoundException('Folder not found');
     folder.name = name;
     return this.folderRepo.save(folder);
   }
 
   async remove(id: string, userId: string): Promise<void> {
-    const folder = await this.folderRepo.findOne({ where: { id, userId } });
+    const folder = await this.folderRepo.findOne({
+      where: { id, user: { id: userId } },
+    });
     if (!folder) throw new NotFoundException('Folder not found');
     await this.folderRepo.delete(id);
   }

@@ -28,7 +28,7 @@ export class GeolocationService {
     const end = new Date();
     return this.locationRepo.find({
       where: {
-        userId,
+        user: { id: userId },
         sharedAt: Between(start, end),
       },
       order: { sharedAt: 'ASC' },
@@ -38,7 +38,7 @@ export class GeolocationService {
   async getRoute(userId: string, from: Date, to: Date): Promise<LocationPoint[]> {
     return this.locationRepo.find({
       where: {
-        userId,
+        user: { id: userId },
         sharedAt: Between(from, to),
       },
       order: { sharedAt: 'ASC' },

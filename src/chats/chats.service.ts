@@ -43,7 +43,7 @@ export class ChatsService {
 
   async findMyChats(userId: string): Promise<Chat[]> {
     const members = await this.memberRepo.find({
-      where: { userId },
+      where: { user: { id: userId } },
       relations: ['chat', 'chat.owner'],
     });
     return members.map((m) => m.chat).filter(Boolean);
@@ -64,7 +64,7 @@ export class ChatsService {
     const chat = await this.findOne(chatId);
     if (!chat) throw new NotFoundException('Chat not found');
     const existing = await this.memberRepo.findOne({
-      where: { chatId, userId },
+      where: { chat: { id: chatId }, user: { id: userId } },
     });
     if (existing) return { joined: true };
     await this.memberRepo.save(
@@ -77,12 +77,19 @@ export class ChatsService {
   }
 
   async leave(chatId: string, userId: string): Promise<{ left: boolean }> {
-    await this.memberRepo.delete({ chatId, userId });
+    await this.memberRepo
+      .createQueryBuilder()
+      .delete()
+      .from(ChatMember)
+      .where('chat_id = :chatId AND user_id = :userId', { chatId, userId })
+      .execute();
     return { left: true };
   }
 
   async isMember(chatId: string, userId: string): Promise<boolean> {
-    const m = await this.memberRepo.findOne({ where: { chatId, userId } });
+    const m = await this.memberRepo.findOne({
+      where: { chat: { id: chatId }, user: { id: userId } },
+    });
     return !!m;
   }
 

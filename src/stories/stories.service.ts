@@ -33,7 +33,7 @@ export class StoriesService {
       .createQueryBuilder('s')
       .where('s.expiresAt > :now', { now: new Date() })
       .orderBy('s.createdAt', 'DESC');
-    if (userId) qb.andWhere('s.userId = :userId', { userId });
+    if (userId) qb.andWhere('s.user_id = :userId', { userId });
     return qb.getMany();
   }
 

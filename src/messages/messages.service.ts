@@ -125,7 +125,7 @@ export class MessagesService {
 
   async findByChat(chatId: string, limit = 50): Promise<Message[]> {
     return this.messageRepo.find({
-      where: { chatId },
+      where: { chat: { id: chatId } },
       order: { createdAt: 'DESC' },
       take: limit,
       relations: ['user'],
