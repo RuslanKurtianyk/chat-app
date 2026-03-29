@@ -8,9 +8,11 @@ export default registerAs('database', () => {
   const url = forceSqlite ? null : process.env.DATABASE_URL?.trim();
   const nodeEnv = process.env.NODE_ENV || 'development';
   const explicitSync = process.env.DATABASE_SYNC;
+  // Важливо: для Postgres/Supabase в проді synchronize має бути вимкнено, щоб не зламати дані.
+  // Міграції робимо через typeorm migrations (npm run migration:run).
   const sync =
     explicitSync === 'true' ||
-    (explicitSync !== 'false' && nodeEnv !== 'production');
+    (explicitSync !== 'false' && !url && nodeEnv !== 'production');
 
   let ssl: boolean | { rejectUnauthorized: boolean } | undefined;
   if (process.env.DATABASE_SSL === 'true') {

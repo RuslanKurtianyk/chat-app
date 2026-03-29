@@ -45,10 +45,14 @@ export class CloudinaryService {
     };
   }
 
+  /**
+   * @param opts.subfolder — додатковий сегмент шляху в Cloudinary (напр. profile, messages).
+   */
   async uploadBuffer(
     buffer: Buffer,
     filename: string,
     contentType?: string,
+    opts?: { subfolder?: string },
   ): Promise<{ secureUrl: string }> {
     if (!this.isConfigured()) {
       throw new BadRequestException(
@@ -56,8 +60,13 @@ export class CloudinaryService {
       );
     }
 
+    const pathSuffix = opts?.subfolder?.replace(/^\/+|\/+$/g, '') || '';
+    const folderPath = pathSuffix
+      ? `${this.folder}/${pathSuffix}`.replace(/\/+/g, '/')
+      : this.folder;
+
     const uploadOptions: Record<string, unknown> = {
-      folder: this.folder,
+      folder: folderPath,
       resource_type: 'auto',
       // Безпечний public_id, щоб не перезаписувати існуючі ресурси
       overwrite: false,

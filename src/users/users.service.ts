@@ -1,16 +1,19 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import type { Express } from 'express';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CloudinaryService } from '../storage/cloudinary.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    private readonly cloudinary: CloudinaryService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<Omit<User, 'passwordHash'>> {
@@ -51,12 +54,28 @@ export class UsersService {
       payload.passwordHash = await bcrypt.hash(updateUserDto.password, 10);
     }
     if (updateUserDto.mobile !== undefined) payload.mobile = updateUserDto.mobile;
+    if (updateUserDto.name !== undefined) payload.name = updateUserDto.name;
     if (updateUserDto.avatarUrl !== undefined) payload.avatarUrl = updateUserDto.avatarUrl;
     if (updateUserDto.nickname !== undefined) payload.nickname = updateUserDto.nickname;
     if (Object.keys(payload).length > 0) {
       await this.userRepo.update(id, payload);
     }
     return this.findOne(id);
+  }
+
+  /** Завантажити аватар у Cloudinary і оновити профіль (те саме сховище, що й /storage/upload kind=profile). */
+  async setAvatarFromUpload(userId: string, file: Express.Multer.File) {
+    if (!file?.buffer?.length) {
+      throw new BadRequestException('Файл порожній');
+    }
+    const { secureUrl } = await this.cloudinary.uploadBuffer(
+      file.buffer,
+      file.originalname,
+      file.mimetype,
+      { subfolder: 'profiles' },
+    );
+    await this.userRepo.update(userId, { avatarUrl: secureUrl });
+    return this.findOne(userId);
   }
 
   async updateLastActive(userId: string): Promise<void> {

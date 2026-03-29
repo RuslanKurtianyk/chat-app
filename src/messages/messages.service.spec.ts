@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { MessagesService } from './messages.service';
 import { Message } from './entities/message.entity';
+import { MessageRead } from './entities/message-read.entity';
 import { ChatsService } from '../chats/chats.service';
 import { CloudinaryService } from '../storage/cloudinary.service';
 import { UsersService } from '../users/users.service';
@@ -24,6 +25,13 @@ describe('MessagesService', () => {
             delete: jest.fn(),
           },
         },
+        {
+          provide: getRepositoryToken(MessageRead),
+          useValue: {
+            find: jest.fn().mockResolvedValue([]),
+            save: jest.fn(),
+          },
+        },
         { provide: ChatsService, useValue: { isMember: jest.fn().mockResolvedValue(true) } },
         {
           provide: CloudinaryService,
@@ -32,7 +40,10 @@ describe('MessagesService', () => {
         { provide: UsersService, useValue: { updateLastActive: jest.fn() } },
         {
           provide: MessagesGateway,
-          useValue: { broadcastMessageCreated: jest.fn() },
+          useValue: {
+            broadcastMessageCreated: jest.fn(),
+            broadcastMessagesRead: jest.fn(),
+          },
         },
       ],
     }).compile();

@@ -1,5 +1,6 @@
 import dns from 'node:dns';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 // Render та інші хости часто без IPv6: Supabase DNS дає AAAA → connect ENETUNREACH.
@@ -22,6 +23,18 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.useWebSocketAdapter(new AppSocketIoAdapter(app));
   app.useStaticAssets(join(__dirname, '..', 'client'));
+
+  // OpenAPI/Swagger docs
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Chat App API')
+    .setDescription('Use header `X-User-Id` for authenticated endpoints.')
+    .setVersion('0.0.1')
+    .build();
+  const swaggerDoc = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api-docs', app, swaggerDoc, {
+    // keeps UI working with static hosting behind Render
+    swaggerOptions: { persistAuthorization: true },
+  });
 
   const corsMode = getCorsMode();
   if (corsMode.mode === 'permissive') {

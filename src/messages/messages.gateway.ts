@@ -39,6 +39,14 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
     this.server.to(`chat:${chatId}`).emit('messageCreated', msg);
   }
 
+  broadcastMessagesRead(
+    chatId: string,
+    receipts: { messageId: string; userId: string; readAt: string }[],
+  ) {
+    if (!receipts.length) return;
+    this.server.to(`chat:${chatId}`).emit('messagesRead', { chatId, receipts });
+  }
+
   @SubscribeMessage('joinChat')
   async handleJoinChat(
     @ConnectedSocket() client: Socket,
@@ -70,7 +78,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
         content: payload.content ?? '',
         replyToId: payload.replyToId,
       });
-      return toMessageWire(msg);
+      return msg;
     } catch (e: any) {
       this.logger.warn(`sendMessage failed: ${e?.message || e}`);
       return { error: e?.message || e?.toString?.() || 'Send failed' };
@@ -111,7 +119,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
       };
     }
     try {
-      const msg = await this.messagesService.createWithBase64File(
+      return await this.messagesService.createWithBase64File(
         userId,
         payload.chatId,
         payload.base64,
@@ -120,7 +128,6 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
         payload.content,
         payload.replyToId,
       );
-      return toMessageWire(msg);
     } catch (e: any) {
       this.logger.warn(`sendMessageWithFile failed: ${e?.message || e}`);
       return { error: e?.message || e?.toString?.() || 'Send failed' };
@@ -158,9 +165,36 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   @SubscribeMessage('getMessages')
   async getMessages(
     @ConnectedSocket() _client: Socket,
-    @MessageBody() payload: { chatId: string },
+    @MessageBody() payload: { chatId: string; limit?: number; cursor?: string },
   ) {
     if (!payload?.chatId) return [];
+    if (payload.limit || payload.cursor) {
+      return this.messagesService.findByChatPage({
+        chatId: payload.chatId,
+        limit: payload.limit,
+        cursor: payload.cursor,
+      });
+    }
     return this.messagesService.findByChat(payload.chatId);
+  }
+
+  @SubscribeMessage('markMessagesRead')
+  async markMessagesRead(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { chatId: string; messageIds: string[] },
+  ) {
+    const userId = client.data?.userId;
+    if (!userId) return { error: 'Identify with query userId' };
+    if (!payload?.chatId || !payload?.messageIds?.length) {
+      return { error: 'chatId and messageIds required' };
+    }
+    try {
+      return await this.messagesService.markMessagesRead(userId, {
+        chatId: payload.chatId,
+        messageIds: payload.messageIds,
+      });
+    } catch (e: any) {
+      return { error: e?.message || 'mark read failed' };
+    }
   }
 }

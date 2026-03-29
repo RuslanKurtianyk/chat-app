@@ -19,22 +19,33 @@ import { User } from './users/entities/user.entity';
 import { Chat } from './chats/entities/chat.entity';
 import { ChatMember } from './chats/entities/chat-member.entity';
 import { Message } from './messages/entities/message.entity';
+import { MessageRead } from './messages/entities/message-read.entity';
 import { Call } from './calls/entities/call.entity';
 import { Story } from './stories/entities/story.entity';
 import { Folder } from './folders/entities/folder.entity';
 import { FolderChat } from './folders/entities/folder-chat.entity';
 import { LocationPoint } from './geolocation/entities/location-point.entity';
+import { Product } from './products/entities/product.entity';
+import { WalletAccount } from './wallet/entities/wallet-account.entity';
+import { WalletTransaction } from './wallet/entities/wallet-transaction.entity';
+import { ProductsModule } from './products/products.module';
+import { WalletModule } from './wallet/wallet.module';
+import { WsModule } from './ws/ws.module';
 
 const typeOrmEntities = [
   User,
   Chat,
   ChatMember,
   Message,
+  MessageRead,
   Call,
   Story,
   Folder,
   FolderChat,
   LocationPoint,
+  Product,
+  WalletAccount,
+  WalletTransaction,
 ];
 
 @Module({
@@ -99,6 +110,9 @@ const typeOrmEntities = [
     FoldersModule,
     GeolocationModule,
     StorageModule,
+    ProductsModule,
+    WalletModule,
+    WsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

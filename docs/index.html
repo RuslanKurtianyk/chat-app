@@ -31,11 +31,17 @@
   <div class="grid2">
     <section>
       <h2>Профіль (HTTP)</h2>
+      <p><code>name</code> — повне імʼя; <code>nickname</code> — публічний нік. Аватар — URL або файл.</p>
       <div><button onclick="getProfile()">GET /users/me</button></div>
       <div style="margin-top: 6px;">
-        <input type="text" id="profileNickname" placeholder="Нікнейм" />
-        <input type="text" id="profileAvatar" placeholder="URL аватара" />
+        <input type="text" id="profileName" placeholder="Імʼя (name)" style="width: 200px" />
+        <input type="text" id="profileNickname" placeholder="Нікнейм" style="width: 160px" />
+        <input type="text" id="profileAvatar" placeholder="URL аватара" style="width: 240px" />
         <button onclick="updateProfile()">PATCH /users/me</button>
+      </div>
+      <div style="margin-top: 6px;">
+        <input type="file" id="profileAvatarFile" accept="image/*" />
+        <button onclick="uploadProfileAvatar()">POST /users/me/avatar</button>
       </div>
     </section>
     <section>
@@ -73,8 +79,31 @@
       <button onclick="sendMessageHttp()">POST /messages</button>
     </div>
     <div style="margin-top: 6px;">
-      <button onclick="getMessagesHttp()">GET /messages?chatId=...</button>
-      <input type="text" id="getMsgChatId" placeholder="Chat ID для GET" />
+      <button onclick="getMessagesHttp()">GET /messages/page</button>
+      <input type="text" id="getMsgChatId" placeholder="Chat ID" />
+      <input type="number" id="getMsgLimit" placeholder="limit" value="50" min="1" style="width: 90px" />
+      <input type="text" id="getMsgCursor" placeholder="cursor (messageId, optional)" style="width: 300px" />
+    </div>
+    <div style="margin-top: 8px;">
+      <span>Прочитано: <code>readBy</code> у кожному повідомленні. Позначити:</span><br />
+      <input type="text" id="readReceiptChatId" placeholder="Chat ID" style="width: 200px" />
+      <input type="text" id="readReceiptMessageIds" placeholder="id повідомлень через кому" style="width: 320px" />
+      <button onclick="markReadHttp()">POST /messages/read-receipts</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Зображення (спільне завантаження)</h2>
+    <p><code>POST /storage/upload</code> — зображення в Cloudinary; поле форми <code>file</code>, опційно <code>kind</code>: <code>general</code> | <code>profile</code> | <code>message</code> | <code>story</code>. Повертає <code>{ url, mimeType, … }</code>; далі підстав URL у профіль або сторіз.</p>
+    <div>
+      <input type="file" id="storageKindFile" accept="image/*" />
+      <select id="storageKind">
+        <option value="general">general</option>
+        <option value="profile">profile</option>
+        <option value="message">message</option>
+        <option value="story">story</option>
+      </select>
+      <button onclick="uploadStorageImage()">POST /storage/upload</button>
     </div>
   </section>
 
@@ -88,6 +117,50 @@
     <div style="margin-top: 6px;">
       <input type="file" id="uploadMsgFile" />
       <button onclick="uploadMessageFile()">Надіслати файл</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Гаманець / валюта (HTTP)</h2>
+    <p>Баланс і транзакції в minor units (цілі числа). Валюта за замовчуванням: <code>COIN</code>.</p>
+    <div>
+      <button onclick="getWallet()">GET /wallet/me</button>
+      <input type="text" id="walletCurrency" placeholder="currency (COIN)" style="width: 140px" />
+    </div>
+    <div style="margin-top: 6px;">
+      <input type="text" id="walletNewBalance" placeholder="new balance (e.g. 1000)" style="width: 220px" />
+      <button onclick="setWalletBalance()">POST /wallet/me/set-balance</button>
+    </div>
+    <div style="margin-top: 6px;">
+      <input type="text" id="walletEarnAmount" placeholder="earn amount (e.g. 50)" style="width: 220px" />
+      <button onclick="earnWallet()">POST /wallet/me/earn</button>
+    </div>
+    <div style="margin-top: 6px;">
+      <input type="text" id="walletToUserId" placeholder="toUserId (UUID)" style="width: 320px" />
+      <input type="text" id="walletTransferAmount" placeholder="amount" style="width: 140px" />
+      <button onclick="transferWallet()">POST /wallet/me/transfer</button>
+    </div>
+    <div style="margin-top: 6px;">
+      <button onclick="getWalletTx()">GET /wallet/me/transactions</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Внутрішні товари (HTTP)</h2>
+    <div>
+      <button onclick="listProducts()">GET /products</button>
+    </div>
+    <div style="margin-top: 6px;">
+      <input type="text" id="productName" placeholder="name" style="width: 220px" />
+      <input type="text" id="productPrice" placeholder="priceAmount (e.g. 100)" style="width: 220px" />
+      <input type="text" id="productCurrency" placeholder="currency (COIN)" style="width: 140px" />
+      <input type="text" id="productImageUrl" placeholder="imageUrl (optional)" style="width: 260px" />
+      <button onclick="createProduct()">POST /products</button>
+    </div>
+    <div style="margin-top: 6px;">
+      <input type="text" id="buyProductId" placeholder="productId" style="width: 320px" />
+      <input type="number" id="buyQty" placeholder="qty" value="1" min="1" style="width: 90px" />
+      <button onclick="buyProduct()">POST /wallet/me/purchase</button>
     </div>
   </section>
 
@@ -196,8 +269,10 @@
 
     async function updateProfile() {
       const body = {};
+      const name = document.getElementById('profileName').value;
       const n = document.getElementById('profileNickname').value;
       const a = document.getElementById('profileAvatar').value;
+      if (name) body.name = name;
       if (n) body.nickname = n;
       if (a) body.avatarUrl = a;
       try {
@@ -205,6 +280,156 @@
         const data = await r.json().catch(() => ({}));
         log(`Update profile: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
       } catch (e) { log(`Update profile error: ${e.message}`, 'error'); }
+    }
+
+    async function uploadProfileAvatar() {
+      const uid = document.getElementById('userId').value;
+      const input = document.getElementById('profileAvatarFile');
+      const file = input.files && input.files[0];
+      if (!uid || !file) { log('User ID і файл аватара обовʼязкові', 'error'); return; }
+      const fd = new FormData();
+      fd.append('file', file);
+      try {
+        const r = await fetch(`${baseUrl()}/users/me/avatar`, { method: 'POST', headers: { 'X-User-Id': uid }, body: fd });
+        const data = await r.json().catch(() => ({}));
+        log(`POST /users/me/avatar: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`Avatar upload error: ${e.message}`, 'error'); }
+    }
+
+    async function uploadStorageImage() {
+      const uid = document.getElementById('userId').value;
+      const input = document.getElementById('storageKindFile');
+      const file = input.files && input.files[0];
+      const kind = document.getElementById('storageKind').value;
+      if (!uid || !file) { log('User ID і файл обовʼязкові', 'error'); return; }
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('kind', kind);
+      try {
+        const r = await fetch(`${baseUrl()}/storage/upload`, { method: 'POST', headers: { 'X-User-Id': uid }, body: fd });
+        const data = await r.json().catch(() => ({}));
+        log(`POST /storage/upload: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`Storage upload error: ${e.message}`, 'error'); }
+    }
+
+    async function markReadHttp() {
+      const chatId = document.getElementById('readReceiptChatId').value;
+      const raw = document.getElementById('readReceiptMessageIds').value;
+      const messageIds = raw.split(',').map((s) => s.trim()).filter(Boolean);
+      if (!chatId || !messageIds.length) { log('Chat ID і хоча б один message id', 'error'); return; }
+      try {
+        const r = await fetch(`${baseUrl()}/messages/read-receipts`, {
+          method: 'POST',
+          headers: headers(),
+          body: JSON.stringify({ chatId, messageIds }),
+        });
+        const data = await r.json().catch(() => ({}));
+        log(`read-receipts: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`mark read error: ${e.message}`, 'error'); }
+    }
+
+    async function getWallet() {
+      const cur = document.getElementById('walletCurrency').value || 'COIN';
+      try {
+        const r = await fetch(`${baseUrl()}/wallet/me?currency=${encodeURIComponent(cur)}`, { headers: headers() });
+        const data = await r.json().catch(() => ({}));
+        log(`Wallet: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`Wallet error: ${e.message}`, 'error'); }
+    }
+
+    async function setWalletBalance() {
+      const cur = document.getElementById('walletCurrency').value || 'COIN';
+      const bal = document.getElementById('walletNewBalance').value;
+      if (!bal) { log('Введіть new balance', 'error'); return; }
+      try {
+        const r = await fetch(`${baseUrl()}/wallet/me/set-balance`, {
+          method: 'POST',
+          headers: headers(),
+          body: JSON.stringify({ currency: cur, balance: bal }),
+        });
+        const data = await r.json().catch(() => ({}));
+        log(`Set balance: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`Set balance error: ${e.message}`, 'error'); }
+    }
+
+    async function earnWallet() {
+      const cur = document.getElementById('walletCurrency').value || 'COIN';
+      const amt = document.getElementById('walletEarnAmount').value;
+      if (!amt) { log('Введіть earn amount', 'error'); return; }
+      try {
+        const r = await fetch(`${baseUrl()}/wallet/me/earn`, {
+          method: 'POST',
+          headers: headers(),
+          body: JSON.stringify({ currency: cur, amount: amt }),
+        });
+        const data = await r.json().catch(() => ({}));
+        log(`Earn: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`Earn error: ${e.message}`, 'error'); }
+    }
+
+    async function transferWallet() {
+      const cur = document.getElementById('walletCurrency').value || 'COIN';
+      const toUserId = document.getElementById('walletToUserId').value;
+      const amt = document.getElementById('walletTransferAmount').value;
+      if (!toUserId || !amt) { log('toUserId і amount обовʼязкові', 'error'); return; }
+      try {
+        const r = await fetch(`${baseUrl()}/wallet/me/transfer`, {
+          method: 'POST',
+          headers: headers(),
+          body: JSON.stringify({ currency: cur, toUserId, amount: amt }),
+        });
+        const data = await r.json().catch(() => ({}));
+        log(`Transfer: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`Transfer error: ${e.message}`, 'error'); }
+    }
+
+    async function getWalletTx() {
+      const cur = document.getElementById('walletCurrency').value || 'COIN';
+      try {
+        const r = await fetch(`${baseUrl()}/wallet/me/transactions?currency=${encodeURIComponent(cur)}`, { headers: headers() });
+        const data = await r.json().catch(() => ({}));
+        log(`Wallet tx: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`Wallet tx error: ${e.message}`, 'error'); }
+    }
+
+    async function listProducts() {
+      try {
+        const r = await fetch(`${baseUrl()}/products`, { headers: headers() });
+        const data = await r.json().catch(() => ({}));
+        log(`Products: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`Products error: ${e.message}`, 'error'); }
+    }
+
+    async function createProduct() {
+      const name = document.getElementById('productName').value;
+      const priceAmount = document.getElementById('productPrice').value;
+      const currency = document.getElementById('productCurrency').value || 'COIN';
+      const imageUrl = document.getElementById('productImageUrl').value;
+      if (!name || !priceAmount) { log('name і priceAmount обовʼязкові', 'error'); return; }
+      try {
+        const r = await fetch(`${baseUrl()}/products`, {
+          method: 'POST',
+          headers: headers(),
+          body: JSON.stringify({ name, priceAmount, currency, imageUrl: imageUrl || null }),
+        });
+        const data = await r.json().catch(() => ({}));
+        log(`Create product: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`Create product error: ${e.message}`, 'error'); }
+    }
+
+    async function buyProduct() {
+      const productId = document.getElementById('buyProductId').value;
+      const quantity = Number(document.getElementById('buyQty').value || 1);
+      if (!productId) { log('productId обовʼязковий', 'error'); return; }
+      try {
+        const r = await fetch(`${baseUrl()}/wallet/me/purchase`, {
+          method: 'POST',
+          headers: headers(),
+          body: JSON.stringify({ productId, quantity }),
+        });
+        const data = await r.json().catch(() => ({}));
+        log(`Purchase: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+      } catch (e) { log(`Purchase error: ${e.message}`, 'error'); }
     }
 
     async function signUp() {
@@ -293,11 +518,15 @@
 
     async function getMessagesHttp() {
       const chatId = document.getElementById('getMsgChatId').value;
-      const url = chatId ? `${baseUrl()}/messages?chatId=${encodeURIComponent(chatId)}` : `${baseUrl()}/messages`;
+      const limit = Number(document.getElementById('getMsgLimit').value || 50);
+      const cursor = document.getElementById('getMsgCursor').value;
+      if (!chatId) { log('Введіть Chat ID', 'error'); return; }
+      const url = `${baseUrl()}/messages/page?chatId=${encodeURIComponent(chatId)}&limit=${encodeURIComponent(String(limit))}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`;
       try {
         const r = await fetch(url, { headers: headers() });
         const data = await r.json().catch(() => ({}));
-        log(`GET messages: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
+        if (data?.nextCursor) document.getElementById('getMsgCursor').value = data.nextCursor;
+        log(`GET messages page: ${r.status} ${JSON.stringify(data)}`, r.ok ? 'sent' : 'error');
       } catch (e) { log(`GET messages error: ${e.message}`, 'error'); }
     }
 
@@ -349,6 +578,7 @@
         document.getElementById('wsConnect').textContent = 'Підключити WS';
       });
       socket.on('messageCreated', (data) => log(`messageCreated: ${JSON.stringify(data)}`, 'event'));
+      socket.on('messagesRead', (data) => log(`messagesRead: ${JSON.stringify(data)}`, 'event'));
       socket.on('userTyping', (data) => log(`userTyping: ${JSON.stringify(data)}`, 'event'));
       socket.on('userOnline', (data) => log(`userOnline: ${JSON.stringify(data)}`, 'event'));
       socket.on('userOffline', (data) => log(`userOffline: ${JSON.stringify(data)}`, 'event'));

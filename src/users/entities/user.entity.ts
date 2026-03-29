@@ -21,7 +21,11 @@ export class User {
   @Column({ name: 'avatar_url', type: 'text', nullable: true })
   avatarUrl: string | null;
 
-  /** Нікнейм */
+  /** Повне ім’я / відображуване ім’я (окремо від нікнейму). */
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  name: string | null;
+
+  /** Нікнейм (публічний псевдонім). */
   @Column({ type: 'varchar', length: 50, nullable: true })
   nickname: string | null;
 

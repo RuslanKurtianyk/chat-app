@@ -9,7 +9,7 @@ services:
     plan: free # or starter
     # NODE_ENV=production змушує npm пропустити devDependencies — тоді немає `nest` для збірки
     buildCommand: npm ci --include=dev && npm run build
-    startCommand: npm run start:prod
+    startCommand: npm run start:prod:migrate
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
@@ -29,7 +29,7 @@ services:
         value: chat-app
       - key: CLOUDINARY_SECURE
         value: "true"
-      # First deploy: set DATABASE_SYNC=true, deploy, create tables, then set false
+      # Migrations: run on boot. Keep sync off in prod.
       - key: DATABASE_SYNC
         value: "false"
       - key: CORS_ORIGIN

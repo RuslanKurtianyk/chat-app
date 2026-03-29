@@ -16,6 +16,7 @@ describe('MessagesGateway', () => {
             create: jest.fn(),
             createWithBase64File: jest.fn(),
             findByChat: jest.fn(),
+            markMessagesRead: jest.fn(),
           },
         },
         {

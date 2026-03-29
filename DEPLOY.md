@@ -70,7 +70,7 @@
 1. **New → Web Service**, connect this repo.
 2. **Build command:** `npm ci --include=dev && npm run build`  
    (Якщо на сервісі задано `NODE_ENV=production`, звичайний `npm ci` **не** ставить devDependencies → **`nest: not found`**. Прапор `--include=dev` це виправляє.)  
-   **Start command:** `npm run start:prod`
+   **Start command:** `npm run start:prod:migrate` (спочатку виконує `migration:run`, потім стартує сервер)
 3. **Health check path:** `/health`
 4. **Environment variables:**
 
@@ -79,7 +79,7 @@
 | `DATABASE_URL` | Yes | Supabase URI |
 | `NODE_ENV` | Yes | `production` |
 | `JWT_SECRET` | Yes | Strong random string |
-| `DATABASE_SYNC` | For first deploy | `true` once, then `false` |
+| `DATABASE_SYNC` | Usually no | Тримай `false` у проді. Схему застосовують міграції (`migration:run`). |
 | `DATABASE_SSL` | Usually no | Auto for `supabase.co` in URL |
 | `CLOUDINARY_CLOUD_NAME` | Yes | Cloudinary cloud name |
 | `CLOUDINARY_API_KEY` | Yes | Cloudinary API key |
@@ -103,6 +103,12 @@
 
 Якщо **`CORS_ORIGIN` порожній** — у коді вмикається permissive CORS і GitHub має проходити; проблема з’являється саме коли список origin **явний**, але без `github.io`.
 | `PORT` | No | Set by Render |
+
+### API документація (Swagger)
+
+- Після деплою відкрий `https://<service>.onrender.com/api-docs`
+- В UI буде показано всі ендпоінти; для “авторизованих” (де потрібен `X-User-Id`) використовуй заголовок:
+  - `X-User-Id: <user uuid>`
 
 5. **WebSockets:** Render supports WebSockets on HTTP services; use the same URL as REST (e.g. `wss://your-service.onrender.com`) for Socket.IO.
 

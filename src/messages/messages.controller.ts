@@ -22,6 +22,7 @@ import { MessagesService } from './messages.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { UploadMessageFieldsDto } from './dto/upload-message.dto';
+import { MarkMessagesReadDto } from './dto/mark-messages-read.dto';
 import type { Express } from 'express';
 
 const maxUploadBytes = Number(
@@ -67,6 +68,25 @@ export class MessagesController {
     );
   }
 
+  @Post('read-receipts')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  markRead(
+    @Headers('x-user-id') userId: string,
+    @Body() dto: MarkMessagesReadDto,
+  ) {
+    if (!userId) return { error: 'Missing X-User-Id' };
+    return this.messagesService.markMessagesRead(userId, dto);
+  }
+
+  @Post(':id/read')
+  async markOneRead(
+    @Param('id') messageId: string,
+    @Headers('x-user-id') userId: string,
+  ) {
+    if (!userId) return { error: 'Missing X-User-Id' };
+    return this.messagesService.markMessageRead(userId, messageId);
+  }
+
   @Post()
   async create(
     @Headers('x-user-id') userId: string,
@@ -80,6 +100,21 @@ export class MessagesController {
   findAll(@Query('chatId') chatId?: string) {
     if (chatId) return this.messagesService.findByChat(chatId);
     return this.messagesService.findAll();
+  }
+
+  /** Пагінація (cursor = messageId). Повертає { items, nextCursor }. */
+  @Get('page')
+  page(
+    @Query('chatId') chatId: string,
+    @Query('limit') limit?: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    if (!chatId) return { error: 'chatId required' };
+    return this.messagesService.findByChatPage({
+      chatId,
+      limit: limit ? Number(limit) : undefined,
+      cursor,
+    });
   }
 
   @Get(':id')
