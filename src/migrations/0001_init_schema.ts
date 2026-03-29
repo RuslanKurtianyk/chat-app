@@ -62,6 +62,16 @@ export class InitSchema0001174318618500 implements MigrationInterface {
         "joined_at" timestamp NOT NULL DEFAULT now()
       );
     `);
+    // Existing DBs may have duplicate (chat_id, user_id) from before this constraint; unique index would fail.
+    await queryRunner.query(`
+      DELETE FROM "chat_members" cm
+      WHERE EXISTS (
+        SELECT 1 FROM "chat_members" cm2
+        WHERE cm2.chat_id = cm.chat_id
+          AND cm2.user_id = cm.user_id
+          AND cm2.id < cm.id
+      );
+    `);
     await queryRunner.query(`
       CREATE UNIQUE INDEX IF NOT EXISTS "UQ_chat_members_pair"
       ON "chat_members" ("chat_id", "user_id");
@@ -123,6 +133,15 @@ export class InitSchema0001174318618500 implements MigrationInterface {
         "message_id" uuid NOT NULL,
         "user_id" uuid NOT NULL,
         "read_at" timestamp NOT NULL DEFAULT now()
+      );
+    `);
+    await queryRunner.query(`
+      DELETE FROM "message_reads" mr
+      WHERE EXISTS (
+        SELECT 1 FROM "message_reads" mr2
+        WHERE mr2.message_id = mr.message_id
+          AND mr2.user_id = mr.user_id
+          AND mr2.id < mr.id
       );
     `);
     await queryRunner.query(`
@@ -223,6 +242,15 @@ export class InitSchema0001174318618500 implements MigrationInterface {
         "folder_id" uuid NOT NULL,
         "chat_id" uuid NOT NULL,
         "created_at" timestamp NOT NULL DEFAULT now()
+      );
+    `);
+    await queryRunner.query(`
+      DELETE FROM "folder_chats" fc
+      WHERE EXISTS (
+        SELECT 1 FROM "folder_chats" fc2
+        WHERE fc2.folder_id = fc.folder_id
+          AND fc2.chat_id = fc.chat_id
+          AND fc2.id < fc.id
       );
     `);
     await queryRunner.query(`
