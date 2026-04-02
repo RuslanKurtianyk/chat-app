@@ -1,3 +1,6 @@
+# Local dev: file uploads go to ./data/uploads (served at /storage/local/...) by default.
+# Override with real CLOUDINARY_* vars if you want cloud storage in compose.
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -32,7 +35,7 @@ services:
       JWT_SECRET: dev-only-change-me
       CORS_ALLOW_LOCALHOST: "true"
 
-      # Optional / external in local dev. Leaving empty keeps endpoints available but uploads will 400.
+      # Empty = use local disk uploads (LOCAL_UPLOADS_ENABLED below). Set all three to use Cloudinary.
       CLOUDINARY_CLOUD_NAME: ""
       CLOUDINARY_API_KEY: ""
       CLOUDINARY_API_SECRET: ""
@@ -40,11 +43,11 @@ services:
       CLOUDINARY_SECURE: "true"
       CLOUDINARY_UPLOAD_PRESET: ""
 
-      # When Cloudinary creds are not set, we fallback to local filesystem uploads.
+      # Default for this stack: store uploads under ./data/uploads (bind-mounted from host).
       LOCAL_UPLOADS_ENABLED: "true"
       LOCAL_UPLOAD_DIR: data/uploads
       LOCAL_UPLOAD_ROUTE_BASE_PATH: /storage/local
-      # LOCAL_UPLOAD_PUBLIC_URL_PREFIX: http://localhost:3000
+      LOCAL_UPLOAD_PUBLIC_URL_PREFIX: http://localhost:3000
 
       UPLOAD_MAX_FILE_BYTES: "26214400"
       WS_MAX_FILE_BYTES: "2097152"

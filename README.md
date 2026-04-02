@@ -74,6 +74,8 @@ This repo ships a `docker-compose.yml` that starts:
 - `postgres` (local DB)
 - optional `pgadmin` (profile `tools`)
 
+By default, **uploads use the local folder** `./data/uploads` (not Cloudinary); URLs look like `http://localhost:3000/storage/local/...`. Set `CLOUDINARY_*` in compose if you want cloud uploads instead.
+
 Run:
 
 ```bash
