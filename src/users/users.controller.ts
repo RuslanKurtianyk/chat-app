@@ -50,7 +50,10 @@ export class UsersController {
 
   /** Оновити профіль (ім’я, нікнейм, URL аватара) */
   @Patch('me')
-  async updateProfile(@Headers('x-user-id') userId: string, @Body() dto: UpdateUserDto) {
+  async updateProfile(
+    @Headers('x-user-id') userId: string,
+    @Body() dto: UpdateUserDto,
+  ) {
     if (!userId) return { error: 'Missing X-User-Id' };
     return this.usersService.update(userId, dto);
   }
@@ -58,7 +61,10 @@ export class UsersController {
   /** Завантажити зображення аватара; повертає оновлений профіль (як POST /storage/upload + PATCH, але одним кроком). */
   @Post('me/avatar')
   @UseInterceptors(
-    FileInterceptor('file', { storage: memoryStorage(), limits: { fileSize: avatarMax } }),
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: avatarMax },
+    }),
   )
   async uploadAvatar(
     @Headers('x-user-id') userId: string,

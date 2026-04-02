@@ -11,7 +11,11 @@ export class GeolocationService {
     private readonly locationRepo: Repository<LocationPoint>,
   ) {}
 
-  async shareLocation(userId: string, lat: number, lng: number): Promise<LocationPoint> {
+  async shareLocation(
+    userId: string,
+    lat: number,
+    lng: number,
+  ): Promise<LocationPoint> {
     const point = this.locationRepo.create({
       user: { id: userId } as User,
       lat,
@@ -35,7 +39,11 @@ export class GeolocationService {
     });
   }
 
-  async getRoute(userId: string, from: Date, to: Date): Promise<LocationPoint[]> {
+  async getRoute(
+    userId: string,
+    from: Date,
+    to: Date,
+  ): Promise<LocationPoint[]> {
     return this.locationRepo.find({
       where: {
         user: { id: userId },

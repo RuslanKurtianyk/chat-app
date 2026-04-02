@@ -21,7 +21,11 @@ export class GeolocationGateway {
     @MessageBody() payload: { lat: number; lng: number },
   ) {
     const userId = client.data?.userId;
-    if (!userId || typeof payload?.lat !== 'number' || typeof payload?.lng !== 'number')
+    if (
+      !userId ||
+      typeof payload?.lat !== 'number' ||
+      typeof payload?.lng !== 'number'
+    )
       return { error: 'Identify and lat, lng required' };
     const point = await this.geolocationService.shareLocation(
       userId,

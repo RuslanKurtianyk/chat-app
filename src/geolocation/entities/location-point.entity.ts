@@ -20,7 +20,11 @@ export class LocationPoint {
   @Column({ type: 'decimal', precision: 10, scale: 7 })
   lng: number;
 
-  @Column({ name: 'shared_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    name: 'shared_at',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   sharedAt: Date;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })

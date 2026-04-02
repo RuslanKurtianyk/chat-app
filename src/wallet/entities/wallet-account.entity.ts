@@ -41,4 +41,3 @@ export class WalletAccount {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }
-

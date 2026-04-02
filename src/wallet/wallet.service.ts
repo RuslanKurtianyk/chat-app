@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { WalletAccount } from './entities/wallet-account.entity';
@@ -96,7 +100,12 @@ export class WalletService {
     });
   }
 
-  async earn(userId: string, currency: string, amountStr: string, note?: string) {
+  async earn(
+    userId: string,
+    currency: string,
+    amountStr: string,
+    note?: string,
+  ) {
     const amount = asBigint(amountStr);
     if (amount <= 0n) throw new BadRequestException('amount must be positive');
     const account = await this.getOrCreateAccount(userId, currency);
@@ -127,8 +136,15 @@ export class WalletService {
     });
   }
 
-  async transfer(fromUserId: string, toUserId: string, currency: string, amountStr: string, note?: string) {
-    if (fromUserId === toUserId) throw new BadRequestException('Cannot transfer to yourself');
+  async transfer(
+    fromUserId: string,
+    toUserId: string,
+    currency: string,
+    amountStr: string,
+    note?: string,
+  ) {
+    if (fromUserId === toUserId)
+      throw new BadRequestException('Cannot transfer to yourself');
     const amount = asBigint(amountStr);
     if (amount <= 0n) throw new BadRequestException('amount must be positive');
 
@@ -139,8 +155,14 @@ export class WalletService {
       const accRepo = manager.getRepository(WalletAccount);
       const txRepo = manager.getRepository(WalletTransaction);
 
-      const a1 = await accRepo.findOne({ where: { id: fromAcc.id }, lock: { mode: 'pessimistic_write' as any } });
-      const a2 = await accRepo.findOne({ where: { id: toAcc.id }, lock: { mode: 'pessimistic_write' as any } });
+      const a1 = await accRepo.findOne({
+        where: { id: fromAcc.id },
+        lock: { mode: 'pessimistic_write' as any },
+      });
+      const a2 = await accRepo.findOne({
+        where: { id: toAcc.id },
+        lock: { mode: 'pessimistic_write' as any },
+      });
       if (!a1 || !a2) throw new NotFoundException('Account not found');
 
       const b1 = BigInt(a1.balance);
@@ -194,7 +216,10 @@ export class WalletService {
       const accRepo = manager.getRepository(WalletAccount);
       const txRepo = manager.getRepository(WalletTransaction);
 
-      const acc = await accRepo.findOne({ where: { id: account.id }, lock: { mode: 'pessimistic_write' as any } });
+      const acc = await accRepo.findOne({
+        where: { id: account.id },
+        lock: { mode: 'pessimistic_write' as any },
+      });
       if (!acc) throw new NotFoundException('Account not found');
       const bal = BigInt(acc.balance);
       if (bal < total) throw new BadRequestException('Insufficient funds');
@@ -219,4 +244,3 @@ export class WalletService {
     });
   }
 }
-

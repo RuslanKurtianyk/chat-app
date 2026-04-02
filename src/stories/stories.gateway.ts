@@ -18,10 +18,12 @@ export class StoriesGateway {
   @SubscribeMessage('createStory')
   async createStory(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { mediaUrl: string; caption?: string; expiresInHours?: number },
+    @MessageBody()
+    payload: { mediaUrl: string; caption?: string; expiresInHours?: number },
   ) {
     const userId = client.data?.userId;
-    if (!userId || !payload?.mediaUrl) return { error: 'Identify and mediaUrl required' };
+    if (!userId || !payload?.mediaUrl)
+      return { error: 'Identify and mediaUrl required' };
     const story = await this.storiesService.create(
       userId,
       payload.mediaUrl,

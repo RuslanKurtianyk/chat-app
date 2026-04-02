@@ -39,7 +39,9 @@ export class UploadcareService {
    * Secure upload: підпис для поля `signature` у multipart-запиті на Uploadcare.
    * expire — Unix timestamp (секунди), коли підпис перестає діяти.
    */
-  createSecureUploadSignature(expire: number): { expire: number; signature: string } | null {
+  createSecureUploadSignature(
+    expire: number,
+  ): { expire: number; signature: string } | null {
     const secret = this.secretKey;
     if (!secret) return null;
     const signature = createHmac('sha256', secret)

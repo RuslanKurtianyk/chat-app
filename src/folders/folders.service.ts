@@ -38,7 +38,11 @@ export class FoldersService {
     return folder;
   }
 
-  async addChat(folderId: string, chatId: string, userId: string): Promise<FolderChat> {
+  async addChat(
+    folderId: string,
+    chatId: string,
+    userId: string,
+  ): Promise<FolderChat> {
     const folder = await this.folderRepo.findOne({
       where: { id: folderId, user: { id: userId } },
     });
@@ -54,7 +58,11 @@ export class FoldersService {
     return this.folderChatRepo.save(fc);
   }
 
-  async removeChat(folderId: string, chatId: string, userId: string): Promise<void> {
+  async removeChat(
+    folderId: string,
+    chatId: string,
+    userId: string,
+  ): Promise<void> {
     const folder = await this.folderRepo.findOne({
       where: { id: folderId, user: { id: userId } },
     });
@@ -63,7 +71,10 @@ export class FoldersService {
       .createQueryBuilder()
       .delete()
       .from(FolderChat)
-      .where('folder_id = :folderId AND chat_id = :chatId', { folderId, chatId })
+      .where('folder_id = :folderId AND chat_id = :chatId', {
+        folderId,
+        chatId,
+      })
       .execute();
   }
 

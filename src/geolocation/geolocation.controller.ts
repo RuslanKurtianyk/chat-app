@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Headers,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Headers, Query } from '@nestjs/common';
 import { GeolocationService } from './geolocation.service';
 
 @Controller('geolocation')

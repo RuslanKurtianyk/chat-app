@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Headers,
-  Body,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, Headers, Body } from '@nestjs/common';
 import { CallsService } from './calls.service';
 
 @Controller('calls')
@@ -18,7 +11,8 @@ export class CallsController {
     @Body() body: { chatId: string },
   ) {
     const chatId = body?.chatId;
-    if (!userId || !chatId) return { error: 'Missing X-User-Id or body.chatId' };
+    if (!userId || !chatId)
+      return { error: 'Missing X-User-Id or body.chatId' };
     return this.callsService.create(chatId, userId);
   }
 

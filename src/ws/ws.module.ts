@@ -5,4 +5,3 @@ import { WsDocsController } from './ws-docs.controller';
   controllers: [WsDocsController],
 })
 export class WsModule {}
-

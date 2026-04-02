@@ -72,7 +72,11 @@ export class WsDocsController {
           event: 'sendMessage',
           direction: 'client->server',
           description: 'Надіслати повідомлення в чат.',
-          payloadExample: { chatId: 'chat-uuid', content: 'hello', replyToId: null },
+          payloadExample: {
+            chatId: 'chat-uuid',
+            content: 'hello',
+            replyToId: null,
+          },
         },
         {
           event: 'sendMessageWithFile',
@@ -103,7 +107,8 @@ export class WsDocsController {
         {
           event: 'getMessages',
           direction: 'client->server',
-          description: 'Отримати останні повідомлення чату (limit у сервісі дефолтний).',
+          description:
+            'Отримати останні повідомлення чату (limit у сервісі дефолтний).',
           payloadExample: { chatId: 'chat-uuid' },
         },
         {
@@ -120,7 +125,11 @@ export class WsDocsController {
           event: 'createStory',
           direction: 'client->server',
           description: 'Створити сторіз через WS (mediaUrl як URL).',
-          payloadExample: { mediaUrl: 'https://...', caption: '...', expiresInHours: 24 },
+          payloadExample: {
+            mediaUrl: 'https://...',
+            caption: '...',
+            expiresInHours: 24,
+          },
         },
         {
           event: 'getStories',
@@ -131,7 +140,8 @@ export class WsDocsController {
         {
           event: 'shareLocation',
           direction: 'client->server',
-          description: 'Надіслати геолокацію в чат/системі (зберігається в БД).',
+          description:
+            'Надіслати геолокацію в чат/системі (зберігається в БД).',
           payloadExample: { lat: 49.45, lng: 32.05 },
         },
         {
@@ -167,7 +177,8 @@ export class WsDocsController {
         {
           event: 'startCall',
           direction: 'client->server',
-          description: 'Старт дзвінка: створює Call у БД і шле callStarted в кімнату чату.',
+          description:
+            'Старт дзвінка: створює Call у БД і шле callStarted в кімнату чату.',
           payloadExample: { chatId: 'chat-uuid' },
         },
         {
@@ -181,7 +192,10 @@ export class WsDocsController {
           direction: 'client->server',
           description:
             'Сигналінг для WebRTC (offer/answer/ice). У твоєму бекенді — broadcast на весь сервер.',
-          payloadExample: { callId: 'call-uuid', signal: { type: 'offer', sdp: '...' } },
+          payloadExample: {
+            callId: 'call-uuid',
+            signal: { type: 'offer', sdp: '...' },
+          },
         },
       ],
       serverToClient: [
@@ -201,7 +215,12 @@ export class WsDocsController {
           event: 'messageCreated',
           direction: 'server->client',
           description: 'Новий message у кімнату `chat:<chatId>`.',
-          payloadExample: { id: 'msg', chatId: 'chat', userId: 'user', content: '...' },
+          payloadExample: {
+            id: 'msg',
+            chatId: 'chat',
+            userId: 'user',
+            content: '...',
+          },
           emitsTo: 'room chat:<chatId>',
         },
         {
@@ -210,7 +229,9 @@ export class WsDocsController {
           description: 'Повертає who-read: у кімнату `chat:<chatId>`.',
           payloadExample: {
             chatId: 'chat-uuid',
-            receipts: [{ messageId: 'msg-uuid', userId: 'user-uuid', readAt: 'ISO' }],
+            receipts: [
+              { messageId: 'msg-uuid', userId: 'user-uuid', readAt: 'ISO' },
+            ],
           },
           emitsTo: 'room chat:<chatId>',
         },
@@ -218,7 +239,11 @@ export class WsDocsController {
           event: 'userTyping',
           direction: 'server->client',
           description: 'Індикатор друкування в кімнату чату.',
-          payloadExample: { userId: 'user-uuid', chatId: 'chat-uuid', typing: true },
+          payloadExample: {
+            userId: 'user-uuid',
+            chatId: 'chat-uuid',
+            typing: true,
+          },
           emitsTo: 'room chat:<chatId>',
         },
         {
@@ -237,7 +262,11 @@ export class WsDocsController {
           event: 'callStarted',
           direction: 'server->client',
           description: 'Старт дзвінка у кімнату чату `chat:<chatId>`.',
-          payloadExample: { id: 'call-uuid', chatId: 'chat-uuid', status: 'ringing' },
+          payloadExample: {
+            id: 'call-uuid',
+            chatId: 'chat-uuid',
+            status: 'ringing',
+          },
           emitsTo: 'room chat:<chatId>',
         },
         {
@@ -250,10 +279,12 @@ export class WsDocsController {
           event: 'callSignal',
           direction: 'server->client',
           description: 'Сигналінг для WebRTC (broadcast global у твоєму коді).',
-          payloadExample: { callId: 'call-uuid', signal: { type: 'answer', sdp: '...' } },
+          payloadExample: {
+            callId: 'call-uuid',
+            signal: { type: 'answer', sdp: '...' },
+          },
         },
       ],
     };
   }
 }
-

@@ -22,10 +22,20 @@ export class Message {
   @Column({ name: 'attachment_url', type: 'text', nullable: true })
   attachmentUrl: string | null;
 
-  @Column({ name: 'attachment_mime_type', type: 'varchar', length: 255, nullable: true })
+  @Column({
+    name: 'attachment_mime_type',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
   attachmentMimeType: string | null;
 
-  @Column({ name: 'original_filename', type: 'varchar', length: 512, nullable: true })
+  @Column({
+    name: 'original_filename',
+    type: 'varchar',
+    length: 512,
+    nullable: true,
+  })
   originalFilename: string | null;
 
   /** Опційне посилання на інше повідомлення (без окремого JoinColumn — уникаємо self-relation + length/uuid). */

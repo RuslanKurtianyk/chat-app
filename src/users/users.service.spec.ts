@@ -24,7 +24,10 @@ describe('UsersService', () => {
         },
         {
           provide: CloudinaryService,
-          useValue: { uploadBuffer: jest.fn(), isConfigured: jest.fn().mockReturnValue(false) },
+          useValue: {
+            uploadBuffer: jest.fn(),
+            isConfigured: jest.fn().mockReturnValue(false),
+          },
         },
       ],
     }).compile();

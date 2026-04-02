@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -16,8 +20,12 @@ export class UsersService {
     private readonly cloudinary: CloudinaryService,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<Omit<User, 'passwordHash'>> {
-    const existing = await this.userRepo.findOne({ where: { mobile: createUserDto.mobile } });
+  async create(
+    createUserDto: CreateUserDto,
+  ): Promise<Omit<User, 'passwordHash'>> {
+    const existing = await this.userRepo.findOne({
+      where: { mobile: createUserDto.mobile },
+    });
     if (existing) {
       throw new ConflictException('User with this mobile already exists');
     }
@@ -53,10 +61,13 @@ export class UsersService {
     if ('password' in updateUserDto && updateUserDto.password) {
       payload.passwordHash = await bcrypt.hash(updateUserDto.password, 10);
     }
-    if (updateUserDto.mobile !== undefined) payload.mobile = updateUserDto.mobile;
+    if (updateUserDto.mobile !== undefined)
+      payload.mobile = updateUserDto.mobile;
     if (updateUserDto.name !== undefined) payload.name = updateUserDto.name;
-    if (updateUserDto.avatarUrl !== undefined) payload.avatarUrl = updateUserDto.avatarUrl;
-    if (updateUserDto.nickname !== undefined) payload.nickname = updateUserDto.nickname;
+    if (updateUserDto.avatarUrl !== undefined)
+      payload.avatarUrl = updateUserDto.avatarUrl;
+    if (updateUserDto.nickname !== undefined)
+      payload.nickname = updateUserDto.nickname;
     if (Object.keys(payload).length > 0) {
       await this.userRepo.update(id, payload);
     }

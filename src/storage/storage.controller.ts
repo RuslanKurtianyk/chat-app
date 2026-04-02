@@ -47,7 +47,8 @@ export class StorageController {
   uploadcareLegacy() {
     return {
       configured: false,
-      message: 'Uploadcare replaced by Cloudinary. Use GET /storage/cloudinary.',
+      message:
+        'Uploadcare replaced by Cloudinary. Use GET /storage/cloudinary.',
     };
   }
 
@@ -57,7 +58,8 @@ export class StorageController {
   @Get('uploadcare/signed-upload')
   signedUpload(@Query('expire') expireStr?: string) {
     return {
-      error: 'signed uploads are not supported in this version (Cloudinary server uploads via POST /messages/upload)',
+      error:
+        'signed uploads are not supported in this version (Cloudinary server uploads via POST /messages/upload)',
       hint: 'Use POST /storage/upload for images (profile, etc.) or POST /messages/upload to attach to a message.',
       expire: expireStr || null,
     };
@@ -82,7 +84,10 @@ export class StorageController {
         validators: [
           new MaxFileSizeValidator({ maxSize: uploadMax }),
           new FileTypeValidator({
-            fileType: new RegExp('^image/(jpeg|jpg|png|gif|webp|svg\\+xml)$', 'i'),
+            fileType: new RegExp(
+              '^image/(jpeg|jpg|png|gif|webp|svg\\+xml)$',
+              'i',
+            ),
           }),
         ],
       }),

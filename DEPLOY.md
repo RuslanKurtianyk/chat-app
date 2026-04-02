@@ -56,11 +56,11 @@
 - `GET /storage/cloudinary` — returns `cloudName`, `folder` and `uploadPreset` (if configured).
 - Legacy routes `/storage/uploadcare` and `/storage/uploadcare/signed-upload` are kept but return “replaced by Cloudinary”.
 
-### Chat file messages (server uploads to Cloudinary)
+### Chat file messages (server uploads)
 
 - **`POST /messages/upload`** — `multipart/form-data`: field **`file`** (required), **`chatId`** (required), optional **`content`** (caption), **`replyToId`**.
 - Headers: **`X-User-Id`** (same as other routes).
-- The server uploads the file to Cloudinary and saves **`attachmentUrl`** (Cloudinary `secure_url`), **`attachmentMimeType`**, **`originalFilename`** on the message.
+- The server uploads the file and saves **`attachmentUrl`** (Cloudinary `secure_url` in prod, or local file URL when `LOCAL_UPLOADS_ENABLED=true`), **`attachmentMimeType`**, **`originalFilename`** on the message.
 - Large files: prefer HTTP upload. WebSocket event **`sendMessageWithFile`** accepts base64 (limit **`WS_MAX_FILE_BYTES`**, default 2MB).
 
 ## 3. Render (host)

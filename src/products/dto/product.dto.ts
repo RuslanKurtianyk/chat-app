@@ -30,4 +30,3 @@ export class CreateProductDto {
   @IsBoolean()
   active?: boolean;
 }
-

@@ -302,4 +302,3 @@ export class InitSchema0001174318618500 implements MigrationInterface {
     await queryRunner.query(`SELECT 1;`);
   }
 }
-

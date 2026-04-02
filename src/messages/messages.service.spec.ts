@@ -32,10 +32,17 @@ describe('MessagesService', () => {
             save: jest.fn(),
           },
         },
-        { provide: ChatsService, useValue: { isMember: jest.fn().mockResolvedValue(true) } },
+        {
+          provide: ChatsService,
+          useValue: { isMember: jest.fn().mockResolvedValue(true) },
+        },
         {
           provide: CloudinaryService,
-          useValue: { uploadBuffer: jest.fn().mockResolvedValue({ secureUrl: 'https://example.com/a.png' }) },
+          useValue: {
+            uploadBuffer: jest
+              .fn()
+              .mockResolvedValue({ secureUrl: 'https://example.com/a.png' }),
+          },
         },
         { provide: UsersService, useValue: { updateLastActive: jest.fn() } },
         {

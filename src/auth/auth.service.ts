@@ -19,7 +19,10 @@ export class AuthService {
     return this.loginPayload(user);
   }
 
-  async validateUser(mobile: string, password: string): Promise<Omit<User, 'passwordHash'> | null> {
+  async validateUser(
+    mobile: string,
+    password: string,
+  ): Promise<Omit<User, 'passwordHash'> | null> {
     const user = await this.usersService.findByMobile(mobile);
     if (!user) return null;
     const valid = await this.usersService.validatePassword(user, password);

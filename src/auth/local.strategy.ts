@@ -13,7 +13,10 @@ export class LocalStrategy extends PassportStrategy(Strategy, 'local') {
     });
   }
 
-  async validate(mobile: string, password: string): Promise<Omit<User, 'passwordHash'>> {
+  async validate(
+    mobile: string,
+    password: string,
+  ): Promise<Omit<User, 'passwordHash'>> {
     const user = await this.authService.validateUser(mobile, password);
     if (!user) throw new UnauthorizedException('Invalid mobile or password');
     return user;

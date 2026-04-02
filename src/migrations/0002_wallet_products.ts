@@ -84,4 +84,3 @@ export class WalletProducts0002174318625000 implements MigrationInterface {
     await queryRunner.query(`SELECT 1;`);
   }
 }
-

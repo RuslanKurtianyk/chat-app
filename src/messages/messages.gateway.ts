@@ -14,7 +14,9 @@ import { ChatsService } from '../chats/chats.service';
 import { toMessageWire } from './message.wire';
 
 @WebSocketGateway({ cors: { origin: '*' } })
-export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class MessagesGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server: Server;
 

@@ -66,6 +66,39 @@ Environment template: **`.env.example`**.
 
 **Supabase на Render:** якщо в дашборді для Direct написано **«Not IPv4 compatible»**, у **`DATABASE_URL`** використовуй **Session pooler** (або Transaction pooler) — не Direct `db.*.supabase.co`. Деталі в **DEPLOY.md §1**.
 
+## Local development with Docker (all services)
+
+This repo ships a `docker-compose.yml` that starts:
+
+- `api` (NestJS, watch mode)
+- `postgres` (local DB)
+- optional `pgadmin` (profile `tools`)
+
+Run:
+
+```bash
+docker compose up --build
+```
+
+Then open:
+
+- API: `http://localhost:3000/health`
+- Swagger: `http://localhost:3000/api-docs`
+- WS docs (JSON): `http://localhost:3000/ws-docs`
+- Minimal test client: `http://localhost:3000/test-client.html`
+
+Optional pgAdmin:
+
+```bash
+docker compose --profile tools up --build
+```
+
+Reset local DB:
+
+```bash
+docker compose down -v
+```
+
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
 
 If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:

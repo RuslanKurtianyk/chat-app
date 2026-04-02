@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post, Query, UsePipes, ValidationPipe } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/product.dto';
 
@@ -17,4 +25,3 @@ export class ProductsController {
     return this.products.create(dto);
   }
 }
-

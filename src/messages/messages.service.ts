@@ -37,7 +37,10 @@ export class MessagesService {
 
   private async notifyNewMessage(chatId: string, msg: Message) {
     await this.usersService.updateLastActive(msg.userId);
-    this.messagesGateway.broadcastMessageCreated(chatId, toMessageWire(msg, []));
+    this.messagesGateway.broadcastMessageCreated(
+      chatId,
+      toMessageWire(msg, []),
+    );
   }
 
   private async attachReads(
@@ -254,7 +257,10 @@ export class MessagesService {
     chatId: string;
     limit?: number;
     cursor?: string; // messageId
-  }): Promise<{ items: ReturnType<typeof toMessageWire>[]; nextCursor: string | null }> {
+  }): Promise<{
+    items: ReturnType<typeof toMessageWire>[];
+    nextCursor: string | null;
+  }> {
     const limit = Math.min(Math.max(params.limit ?? 50, 1), 200);
 
     let cursorCreatedAt: Date | null = null;
@@ -265,7 +271,10 @@ export class MessagesService {
         select: ['id', 'createdAt'],
       });
       if (c) {
-        cursorCreatedAt = c.createdAt instanceof Date ? c.createdAt : new Date(c.createdAt as any);
+        cursorCreatedAt =
+          c.createdAt instanceof Date
+            ? c.createdAt
+            : new Date(c.createdAt as any);
         cursorId = c.id;
       }
     }
@@ -287,13 +296,12 @@ export class MessagesService {
 
     const messages = await qb.getMany();
     const items = await this.attachReads(messages);
-    const nextCursor = messages.length === limit ? messages[messages.length - 1].id : null;
+    const nextCursor =
+      messages.length === limit ? messages[messages.length - 1].id : null;
     return { items, nextCursor };
   }
 
-  async findOne(
-    id: string,
-  ): Promise<ReturnType<typeof toMessageWire> | null> {
+  async findOne(id: string): Promise<ReturnType<typeof toMessageWire> | null> {
     const msg = await this.messageRepo.findOne({
       where: { id },
       relations: ['user', 'chat'],

@@ -8,7 +8,9 @@ import { Server, Socket } from 'socket.io';
 import { UsersService } from './users.service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
-export class PresenceGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class PresenceGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server: Server;
 
@@ -16,9 +18,7 @@ export class PresenceGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   async handleConnection(client: Socket) {
     const raw = client.handshake?.query?.userId;
-    const userId = raw
-      ? String(Array.isArray(raw) ? raw[0] : raw)
-      : null;
+    const userId = raw ? String(Array.isArray(raw) ? raw[0] : raw) : null;
     if (userId) {
       client.data = { userId };
       await this.usersService.updateLastActive(userId);

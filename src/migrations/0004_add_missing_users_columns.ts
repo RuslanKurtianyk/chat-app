@@ -52,4 +52,3 @@ export class AddMissingUsersColumns0004174319000000 implements MigrationInterfac
     await queryRunner.query(`SELECT 1;`);
   }
 }
-

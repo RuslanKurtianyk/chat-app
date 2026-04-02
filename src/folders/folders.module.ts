@@ -7,9 +7,7 @@ import { Folder } from './entities/folder.entity';
 import { FolderChat } from './entities/folder-chat.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Folder, FolderChat]),
-  ],
+  imports: [TypeOrmModule.forFeature([Folder, FolderChat])],
   controllers: [FoldersController],
   providers: [FoldersService, FoldersGateway],
   exports: [FoldersService],

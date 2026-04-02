@@ -13,7 +13,13 @@ describe('ChatsService', () => {
         ChatsService,
         {
           provide: getRepositoryToken(Chat),
-          useValue: { create: jest.fn(), save: jest.fn(), find: jest.fn(), findOne: jest.fn(), delete: jest.fn() },
+          useValue: {
+            create: jest.fn(),
+            save: jest.fn(),
+            find: jest.fn(),
+            findOne: jest.fn(),
+            delete: jest.fn(),
+          },
         },
         {
           provide: getRepositoryToken(ChatMember),

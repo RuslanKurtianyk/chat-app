@@ -25,7 +25,10 @@ export function getCorsMode(): CorsMode {
   const allowLocal = process.env.CORS_ALLOW_LOCALHOST === 'true';
 
   const fromEnv = raw
-    ? raw.split(',').map((s) => s.trim()).filter(Boolean)
+    ? raw
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
     : [];
 
   if (fromEnv.length === 0 && !allowLocal) {

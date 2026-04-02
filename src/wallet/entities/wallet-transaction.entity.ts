@@ -62,4 +62,3 @@ export class WalletTransaction {
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }
-

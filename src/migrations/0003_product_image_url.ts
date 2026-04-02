@@ -18,4 +18,3 @@ export class ProductImageUrl0003174318628000 implements MigrationInterface {
     `);
   }
 }
-

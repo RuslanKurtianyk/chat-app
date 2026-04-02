@@ -94,7 +94,7 @@
 
   <section>
     <h2>Зображення (спільне завантаження)</h2>
-    <p><code>POST /storage/upload</code> — зображення в Cloudinary; поле форми <code>file</code>, опційно <code>kind</code>: <code>general</code> | <code>profile</code> | <code>message</code> | <code>story</code>. Повертає <code>{ url, mimeType, … }</code>; далі підстав URL у профіль або сторіз.</p>
+    <p><code>POST /storage/upload</code> — в Cloudinary (prod) або у локальну папку для dev, якщо увімкнути <code>LOCAL_UPLOADS_ENABLED=true</code> і не задані креденшли Cloudinary; поле форми <code>file</code>, опційно <code>kind</code>: <code>general</code> | <code>profile</code> | <code>message</code> | <code>story</code>. Повертає <code>{ url, mimeType, … }</code>; далі підстав URL у профіль або сторіз.</p>
     <div>
       <input type="file" id="storageKindFile" accept="image/*" />
       <select id="storageKind">
@@ -109,7 +109,7 @@
 
   <section>
     <h2>Файл у чат (HTTP → бекенд → Cloudinary)</h2>
-    <p>Клієнт надсилає файл на <code>POST /messages/upload</code>; сервер завантажує в Cloudinary і записує <code>attachmentUrl</code> у повідомлення. Потрібні <code>CLOUDINARY_CLOUD_NAME</code>, <code>CLOUDINARY_API_KEY</code>, <code>CLOUDINARY_API_SECRET</code> на сервері.</p>
+    <p>Клієнт надсилає файл на <code>POST /messages/upload</code>; сервер зберігає файл і записує <code>attachmentUrl</code> у повідомлення. У проді це Cloudinary, а для локальної розробки можна увімкнути <code>LOCAL_UPLOADS_ENABLED=true</code> (файли збережуться в <code>./data/uploads</code> і віддаватимуться через <code>/storage/local/...</code>).</p>
     <div>
       <input type="text" id="uploadMsgChatId" placeholder="Chat ID" style="width: 260px" />
       <input type="text" id="uploadMsgCaption" placeholder="Підпис до файлу (опц.)" style="width: 200px" />

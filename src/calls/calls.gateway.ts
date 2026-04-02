@@ -21,7 +21,8 @@ export class CallsGateway {
     @MessageBody() payload: { chatId: string },
   ) {
     const userId = client.data?.userId;
-    if (!userId || !payload?.chatId) return { error: 'userId and chatId required' };
+    if (!userId || !payload?.chatId)
+      return { error: 'userId and chatId required' };
     const call = await this.callsService.create(payload.chatId, userId);
     this.server.to(`chat:${payload.chatId}`).emit('callStarted', call);
     return call;

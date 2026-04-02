@@ -17,7 +17,8 @@ export class StoriesController {
   @Post()
   async create(
     @Headers('x-user-id') userId: string,
-    @Body() body: { mediaUrl: string; caption?: string; expiresInHours?: number },
+    @Body()
+    body: { mediaUrl: string; caption?: string; expiresInHours?: number },
   ) {
     if (!userId) return { error: 'Missing X-User-Id' };
     if (!body?.mediaUrl) return { error: 'mediaUrl required' };

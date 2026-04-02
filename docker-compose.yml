@@ -1,0 +1,74 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: chat
+      POSTGRES_USER: chat
+      POSTGRES_PASSWORD: chat
+    ports:
+      # 5432 is commonly already used by a host Postgres; expose on 5433 instead.
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chat -d chat"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    environment:
+      PORT: "3000"
+      NODE_ENV: development
+      # Local Postgres in this compose stack
+      DATABASE_URL: postgresql://chat:chat@postgres:5432/chat
+      # For local convenience (auto-create schema). For prod keep false and run migrations.
+      DATABASE_SYNC: "true"
+      DATABASE_SSL: "false"
+      JWT_SECRET: dev-only-change-me
+      CORS_ALLOW_LOCALHOST: "true"
+
+      # Optional / external in local dev. Leaving empty keeps endpoints available but uploads will 400.
+      CLOUDINARY_CLOUD_NAME: ""
+      CLOUDINARY_API_KEY: ""
+      CLOUDINARY_API_SECRET: ""
+      CLOUDINARY_FOLDER: chat-app
+      CLOUDINARY_SECURE: "true"
+      CLOUDINARY_UPLOAD_PRESET: ""
+
+      # When Cloudinary creds are not set, we fallback to local filesystem uploads.
+      LOCAL_UPLOADS_ENABLED: "true"
+      LOCAL_UPLOAD_DIR: data/uploads
+      LOCAL_UPLOAD_ROUTE_BASE_PATH: /storage/local
+      # LOCAL_UPLOAD_PUBLIC_URL_PREFIX: http://localhost:3000
+
+      UPLOAD_MAX_FILE_BYTES: "26214400"
+      WS_MAX_FILE_BYTES: "2097152"
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./:/app
+      - api_node_modules:/app/node_modules
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    profiles: ["tools"]
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  api_node_modules:

@@ -36,7 +36,11 @@ export class FoldersGateway {
     const userId = client.data?.userId;
     if (!userId || !payload?.folderId || !payload?.chatId)
       return { error: 'userId, folderId, chatId required' };
-    return this.foldersService.addChat(payload.folderId, payload.chatId, userId);
+    return this.foldersService.addChat(
+      payload.folderId,
+      payload.chatId,
+      userId,
+    );
   }
 
   @SubscribeMessage('removeChatFromFolder')

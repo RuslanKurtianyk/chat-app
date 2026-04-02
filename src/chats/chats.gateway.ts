@@ -70,10 +70,7 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('createChat')
-  async createChat(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() dto: any,
-  ) {
+  async createChat(@ConnectedSocket() client: Socket, @MessageBody() dto: any) {
     const userId = client.data?.userId;
     if (!userId) return { error: 'Identify with query userId' };
     return this.chatsService.create(userId, {

@@ -1,4 +1,12 @@
-import { IsInt, IsOptional, IsString, IsUUID, Matches, MaxLength, Min } from 'class-validator';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Matches,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 const intString = /^-?\d+$/;
 
@@ -61,4 +69,3 @@ export class WalletPurchaseDto {
   @Min(1)
   quantity?: number;
 }
-

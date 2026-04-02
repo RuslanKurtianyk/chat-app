@@ -3,10 +3,15 @@ import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary } from 'cloudinary';
 import { Readable } from 'stream';
 import path from 'path';
+import { promises as fs } from 'node:fs';
 
 @Injectable()
 export class CloudinaryService {
   private readonly folder: string;
+  private readonly localUploadsEnabled: boolean;
+  private readonly localUploadDir: string;
+  private readonly localUploadPublicUrlPrefix: string;
+  private readonly localUploadRouteBasePath: string;
 
   constructor(private readonly config: ConfigService) {
     const cloudName = this.config.get<string>('cloudinary.cloudName') || '';
@@ -23,6 +28,15 @@ export class CloudinaryService {
     }
 
     this.folder = this.config.get<string>('cloudinary.folder') || 'chat-app';
+    this.localUploadsEnabled =
+      this.config.get<boolean>('cloudinary.localUploadsEnabled') ?? false;
+    this.localUploadDir =
+      this.config.get<string>('cloudinary.localUploadDir') || 'data/uploads';
+    this.localUploadPublicUrlPrefix =
+      this.config.get<string>('cloudinary.localUploadPublicUrlPrefix') || '';
+    this.localUploadRouteBasePath =
+      this.config.get<string>('cloudinary.localUploadRouteBasePath') ||
+      '/storage/local';
   }
 
   isConfigured(): boolean {
@@ -34,7 +48,8 @@ export class CloudinaryService {
 
   getClientConfig() {
     const cloudName = this.config.get<string>('cloudinary.cloudName') || '';
-    const uploadPreset = this.config.get<string>('cloudinary.uploadPreset') || '';
+    const uploadPreset =
+      this.config.get<string>('cloudinary.uploadPreset') || '';
     return {
       configured: this.isConfigured(),
       cloudName,
@@ -55,9 +70,44 @@ export class CloudinaryService {
     opts?: { subfolder?: string },
   ): Promise<{ secureUrl: string }> {
     if (!this.isConfigured()) {
-      throw new BadRequestException(
-        'Cloudinary не налаштовано: задайте CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET',
+      if (!this.localUploadsEnabled) {
+        throw new BadRequestException(
+          'Cloudinary не налаштовано: задайте CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET або увімкніть LOCAL_UPLOADS_ENABLED=true',
+        );
+      }
+
+      const subfolderRaw = opts?.subfolder ?? '';
+      const safeSubfolder =
+        String(subfolderRaw)
+          .replace(/[\\/]+/g, '_')
+          .trim() || 'general';
+
+      const originalBase = path.basename(
+        filename || 'file',
+        path.extname(filename || 'file'),
       );
+      const safeBase =
+        originalBase.replace(/[^\w-]+/g, '_').slice(0, 120) || 'file';
+      const ext = path.extname(filename || '') || '';
+      const unique = `${Date.now()}_${Math.floor(Math.random() * 1_000_000)}`;
+      const outFilename = `${safeBase}_${unique}${ext}`;
+
+      // Store: <localUploadDir>/<cloudinary.folder>/<subfolder>/<file>
+      const outDirAbs = path.resolve(
+        process.cwd(),
+        this.localUploadDir,
+        this.folder,
+        safeSubfolder,
+      );
+      await fs.mkdir(outDirAbs, { recursive: true });
+      const outFileAbs = path.join(outDirAbs, outFilename);
+      await fs.writeFile(outFileAbs, buffer);
+
+      const relUrl = `${this.localUploadRouteBasePath}/${encodeURIComponent(this.folder)}/${encodeURIComponent(
+        safeSubfolder,
+      )}/${encodeURIComponent(outFilename)}`;
+      const prefix = this.localUploadPublicUrlPrefix.trim();
+      return { secureUrl: prefix ? `${prefix}${relUrl}` : relUrl };
     }
 
     const pathSuffix = opts?.subfolder?.replace(/^\/+|\/+$/g, '') || '';
@@ -82,21 +132,35 @@ export class CloudinaryService {
     }
 
     return new Promise((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(uploadOptions, (err, res) => {
-        if (err) return reject(err);
-        if (!res?.secure_url) {
-          return reject(
-            new BadRequestException('Cloudinary: немає secure_url у відповіді'),
-          );
-        }
-        resolve({ secureUrl: res.secure_url });
-      });
+      const stream = cloudinary.uploader.upload_stream(
+        uploadOptions,
+        (err, res) => {
+          if (err) {
+            const reason: Error =
+              err instanceof Error
+                ? err
+                : new Error('Cloudinary upload failed');
+            return reject(reason);
+          }
+          if (!res?.secure_url) {
+            return reject(
+              new BadRequestException(
+                'Cloudinary: немає secure_url у відповіді',
+              ),
+            );
+          }
+          resolve({ secureUrl: res.secure_url });
+        },
+      );
 
       // Відправляємо Buffer як потік
       const readable = Readable.from(buffer);
-      readable.on('error', reject);
+      readable.on('error', (e) => {
+        const reason: Error =
+          e instanceof Error ? e : new Error('Local upload stream failed');
+        reject(reason);
+      });
       readable.pipe(stream);
     });
   }
 }
-

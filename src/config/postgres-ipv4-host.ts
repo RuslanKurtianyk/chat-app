@@ -4,7 +4,11 @@ import dnsPromises, { Resolver } from 'node:dns/promises';
 
 export type PgSslSetting =
   | boolean
-  | { rejectUnauthorized?: boolean; servername?: string; [key: string]: unknown }
+  | {
+      rejectUnauthorized?: boolean;
+      servername?: string;
+      [key: string]: unknown;
+    }
   | undefined;
 
 function parseDnsServers(): string[] {
