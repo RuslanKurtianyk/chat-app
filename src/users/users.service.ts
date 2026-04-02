@@ -11,6 +11,7 @@ import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CloudinaryService } from '../storage/cloudinary.service';
+import { isUuidString } from '../common/is-uuid';
 
 @Injectable()
 export class UsersService {
@@ -90,6 +91,7 @@ export class UsersService {
   }
 
   async updateLastActive(userId: string): Promise<void> {
+    if (!isUuidString(userId)) return;
     await this.userRepo.update(userId, { lastActiveAt: new Date() });
   }
 
