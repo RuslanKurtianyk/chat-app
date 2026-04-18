@@ -16,6 +16,13 @@ import {
   WalletTransferDto,
 } from './dto/wallet.dto';
 
+/**
+ * Internal currency (default `COIN`): balance + immutable ledger (`wallet_transactions`).
+ *
+ * - **Send money to another user:** `POST /wallet/me/transfer` — creates paired `transfer_out` / `transfer_in` rows (history on both sides).
+ * - **Buy catalog product:** `POST /wallet/me/purchase` — debits buyer, records `purchase` with `productId` (and note with product name).
+ * - **History:** `GET /wallet/me/transactions` — paginated (`cursor`, `limit`), each row includes `direction` + `summary`.
+ */
 @Controller('wallet')
 export class WalletController {
   constructor(private readonly wallet: WalletService) {}
@@ -57,6 +64,7 @@ export class WalletController {
     );
   }
 
+  /** Peer-to-peer internal transfer; persisted as two mirrored transactions. */
   @Post('me/transfer')
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   transfer(
@@ -73,6 +81,7 @@ export class WalletController {
     );
   }
 
+  /** Spend internal currency on a product; one `purchase` ledger row per checkout. */
   @Post('me/purchase')
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   purchase(
@@ -83,17 +92,19 @@ export class WalletController {
     return this.wallet.purchase(userId, dto.productId, dto.quantity ?? 1);
   }
 
+  /** Newest first; `cursor` = previous response `nextCursor`. */
   @Get('me/transactions')
   listTx(
     @Headers('x-user-id') userId: string,
     @Query('currency') currency?: string,
     @Query('limit') limit?: string,
+    @Query('cursor') cursor?: string,
   ) {
     if (!userId) return { error: 'Missing X-User-Id' };
-    return this.wallet.listMyTransactions(
-      userId,
-      currency ?? 'COIN',
-      limit ? Number(limit) : 50,
-    );
+    return this.wallet.listMyTransactionsPage(userId, {
+      currency: currency ?? 'COIN',
+      limit: limit ? Number(limit) : 50,
+      cursor: cursor?.trim() || undefined,
+    });
   }
 }

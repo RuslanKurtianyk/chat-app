@@ -8,10 +8,20 @@ import {
   Delete,
   Headers,
   Query,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
+import type { Express } from 'express';
 import { ChatsService } from './chats.service';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { UpdateChatDto } from './dto/update-chat.dto';
+
+const chatImageMax = Number(process.env.UPLOAD_MAX_FILE_BYTES || 25 * 1024 * 1024);
 
 @Controller('chats')
 export class ChatsController {
@@ -47,6 +57,33 @@ export class ChatsController {
   async leave(@Param('id') id: string, @Headers('x-user-id') userId: string) {
     if (!userId) return { error: 'Missing X-User-Id' };
     return this.chatsService.leave(id, userId);
+  }
+
+  /** Group chat cover image (multipart field `file`). Owner only. */
+  @Post(':id/image')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: chatImageMax },
+    }),
+  )
+  async uploadGroupImage(
+    @Param('id') id: string,
+    @Headers('x-user-id') userId: string,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: chatImageMax }),
+          new FileTypeValidator({
+            fileType: new RegExp('^image/(jpeg|jpg|png|gif|webp|svg\\+xml)$', 'i'),
+          }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+  ) {
+    if (!userId) return { error: 'Missing X-User-Id' };
+    return this.chatsService.setGroupImageFromUpload(id, userId, file);
   }
 
   @Get(':id')

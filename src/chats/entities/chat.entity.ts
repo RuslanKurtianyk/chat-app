@@ -25,6 +25,10 @@ export class Chat {
   @Column({ name: 'is_group', default: false })
   isGroup: boolean;
 
+  /** Cover / avatar URL for group chats (optional). */
+  @Column({ name: 'image_url', type: 'text', nullable: true })
+  imageUrl: string | null;
+
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'owner_id' })
   owner: User;

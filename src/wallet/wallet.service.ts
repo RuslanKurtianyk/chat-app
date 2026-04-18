@@ -9,6 +9,7 @@ import { WalletAccount } from './entities/wallet-account.entity';
 import { WalletTransaction } from './entities/wallet-transaction.entity';
 import { User } from '../users/entities/user.entity';
 import { ProductsService } from '../products/products.service';
+import { toWalletTransactionWire } from './wallet-transaction.wire';
 
 function asBigint(v: string): bigint {
   try {
@@ -47,13 +48,56 @@ export class WalletService {
     return this.getOrCreateAccount(userId, currency);
   }
 
-  async listMyTransactions(userId: string, currency = 'COIN', limit = 50) {
+  /**
+   * Paginated ledger for this user's wallet account (newest first).
+   * Pass `cursor` = previous page's `nextCursor` (transaction id).
+   */
+  async listMyTransactionsPage(
+    userId: string,
+    opts: { currency?: string; limit?: number; cursor?: string },
+  ): Promise<{
+    items: ReturnType<typeof toWalletTransactionWire>[];
+    nextCursor: string | null;
+  }> {
+    const currency = opts.currency ?? 'COIN';
+    const limit = Math.min(Math.max(opts.limit ?? 50, 1), 100);
     const account = await this.getOrCreateAccount(userId, currency);
-    return this.txRepo.find({
-      where: { account: { id: account.id } },
-      order: { createdAt: 'DESC' },
-      take: Math.min(Math.max(limit, 1), 200),
-    });
+
+    let cursorCreatedAt: Date | undefined;
+    let cursorId: string | undefined;
+    if (opts.cursor) {
+      const cur = await this.txRepo.findOne({
+        where: { id: opts.cursor, account: { id: account.id } },
+        select: ['id', 'createdAt'],
+      });
+      if (cur) {
+        cursorCreatedAt =
+          cur.createdAt instanceof Date
+            ? cur.createdAt
+            : new Date(cur.createdAt as unknown as string);
+        cursorId = cur.id;
+      }
+    }
+
+    const qb = this.txRepo
+      .createQueryBuilder('t')
+      .where('t.account_id = :accountId', { accountId: account.id })
+      .orderBy('t.createdAt', 'DESC')
+      .addOrderBy('t.id', 'DESC')
+      .take(limit);
+
+    if (cursorCreatedAt && cursorId) {
+      qb.andWhere(
+        '(t.createdAt < :cAt OR (t.createdAt = :cAt AND t.id < :cId))',
+        { cAt: cursorCreatedAt, cId: cursorId },
+      );
+    }
+
+    const rows = await qb.getMany();
+    const items = rows.map((r) => toWalletTransactionWire(r));
+    const nextCursor =
+      rows.length === limit ? rows[rows.length - 1].id : null;
+    return { items, nextCursor };
   }
 
   async setBalanceFromClient(

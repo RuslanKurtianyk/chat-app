@@ -5,7 +5,7 @@
 | Фіча | Статус | HTTP | WebSocket | Примітки |
 |------|--------|------|-----------|----------|
 | **Чати** | ✅ | ✅ ChatsController | ✅ ChatsGateway | join/leave, myChats, public search |
-| **Групи** | ✅ | ✅ через Chats | ✅ через Chats | `isGroup: true` при створенні чату |
+| **Групи** | ✅ | ✅ через Chats | ✅ через Chats | `isGroup: true`; обкладинка групи: `imageUrl` або `POST /chats/:id/image` |
 | **Профіль** | ✅ | ✅ GET/PATCH /users/me | — | логотип (avatarUrl), нікнейм, активність (lastActiveAt) |
 | **Індикатор активності** | ✅ | lastActiveAt у профілі | ✅ userOnline / userOffline (PresenceGateway) | оновлення при підключенні WS |
 | **Дзвінки** | ✅ | ✅ CallsController | ✅ CallsGateway | startCall, endCall, callSignal |

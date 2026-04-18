@@ -12,4 +12,10 @@ export class CreateChatDto {
   @IsOptional()
   @IsBoolean()
   isGroup?: boolean;
+
+  /** Optional group cover image URL (only meaningful when isGroup is true). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  imageUrl?: string | null;
 }

@@ -3,6 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { ChatsService } from './chats.service';
 import { Chat } from './entities/chat.entity';
 import { ChatMember } from './entities/chat-member.entity';
+import { CloudinaryService } from '../storage/cloudinary.service';
 
 describe('ChatsService', () => {
   let service: ChatsService;
@@ -20,6 +21,10 @@ describe('ChatsService', () => {
             findOne: jest.fn(),
             delete: jest.fn(),
           },
+        },
+        {
+          provide: CloudinaryService,
+          useValue: { uploadBuffer: jest.fn() },
         },
         {
           provide: getRepositoryToken(ChatMember),

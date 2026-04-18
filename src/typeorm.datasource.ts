@@ -21,6 +21,7 @@ import { InitSchema0001174318618500 } from './migrations/0001_init_schema';
 import { WalletProducts0002174318625000 } from './migrations/0002_wallet_products';
 import { ProductImageUrl0003174318628000 } from './migrations/0003_product_image_url';
 import { AddMissingUsersColumns0004174319000000 } from './migrations/0004_add_missing_users_columns';
+import { ChatImageUrl0005174319000000 } from './migrations/0005_chat_image_url';
 
 function loadDotEnvIfPresent() {
   const p = join(process.cwd(), '.env');
@@ -66,6 +67,7 @@ const migrations = [
   WalletProducts0002174318625000,
   ProductImageUrl0003174318628000,
   AddMissingUsersColumns0004174319000000,
+  ChatImageUrl0005174319000000,
 ];
 
 async function buildPostgresDataSource() {
