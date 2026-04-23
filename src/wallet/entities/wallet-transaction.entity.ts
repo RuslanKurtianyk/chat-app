@@ -16,7 +16,9 @@ export type WalletTransactionType =
   | 'earn'
   | 'transfer_in'
   | 'transfer_out'
-  | 'purchase';
+  | 'purchase'
+  | 'mkt_purchase'
+  | 'mkt_sale';
 
 @Entity('wallet_transactions')
 @Index('IDX_wallet_tx_user_created', ['user', 'createdAt'])
@@ -38,7 +40,7 @@ export class WalletTransaction {
   @RelationId((t: WalletTransaction) => t.user)
   userId: string;
 
-  @Column({ type: 'varchar', length: 16 })
+  @Column({ type: 'varchar', length: 32 })
   type: WalletTransactionType;
 
   /** Positive or negative, in minor units. */
@@ -55,6 +57,14 @@ export class WalletTransaction {
   /** Optional product reference for purchases. */
   @Column({ name: 'product_id', type: 'uuid', nullable: true })
   productId: string | null;
+
+  /** P2P marketplace listing (buy/sell between users). */
+  @Column({ name: 'listing_id', type: 'uuid', nullable: true })
+  listingId: string | null;
+
+  /** Pending offer that was accepted (peer trade). */
+  @Column({ name: 'offer_id', type: 'uuid', nullable: true })
+  offerId: string | null;
 
   @Column({ type: 'text', nullable: true })
   note: string | null;

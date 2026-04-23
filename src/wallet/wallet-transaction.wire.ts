@@ -22,7 +22,13 @@ export function toWalletTransactionWire(t: WalletTransaction) {
       summary = 'Outgoing transfer (internal)';
       break;
     case 'purchase':
-      summary = 'Product purchase (internal currency)';
+      summary = 'Product purchase from catalog (internal currency)';
+      break;
+    case 'mkt_purchase':
+      summary = 'Marketplace purchase (peer)';
+      break;
+    case 'mkt_sale':
+      summary = 'Marketplace sale (peer)';
       break;
     case 'earn':
       summary = 'Credit (earn)';
@@ -36,12 +42,15 @@ export function toWalletTransactionWire(t: WalletTransaction) {
 
   return {
     id: t.id,
+    userId: t.userId,
     type: t.type,
     amount: t.amount,
     currency: t.currency,
     note: t.note,
     counterpartyUserId: t.counterpartyUserId,
     productId: t.productId,
+    listingId: t.listingId,
+    offerId: t.offerId,
     direction,
     summary,
     createdAt:

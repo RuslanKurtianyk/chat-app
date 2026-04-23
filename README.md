@@ -59,6 +59,10 @@ $ npm run test:cov
 
 See **[TESTING.md](./TESTING.md)** for how to test the chat app (unit, e2e, and manual testing with the minimal client). You don’t need to write a client for testing—use the provided test client or E2E tests.
 
+**Shop purchases and peer marketplace trades:** **[docs/PURCHASING_AND_TRADING.md](./docs/PURCHASING_AND_TRADING.md)** (catalog → inventory → listings → offers → seller accept).
+
+**Admin HTTP API** (products, users, wallet ledger / adjustments): **[docs/ADMIN_API.md](./docs/ADMIN_API.md)** (`ADMIN_API_KEY`, header `X-Admin-Api-Key`).
+
 ## Deployment
 
 **Render + Supabase + Cloudinary:** see **[DEPLOY.md](./DEPLOY.md)** and **`render.yaml`**.  

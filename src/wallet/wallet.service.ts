@@ -10,6 +10,7 @@ import { WalletTransaction } from './entities/wallet-transaction.entity';
 import { User } from '../users/entities/user.entity';
 import { ProductsService } from '../products/products.service';
 import { toWalletTransactionWire } from './wallet-transaction.wire';
+import { MarketplaceService } from '../marketplace/marketplace.service';
 
 function asBigint(v: string): bigint {
   try {
@@ -28,6 +29,7 @@ export class WalletService {
     @InjectRepository(WalletTransaction)
     private readonly txRepo: Repository<WalletTransaction>,
     private readonly products: ProductsService,
+    private readonly marketplace: MarketplaceService,
   ) {}
 
   private async getOrCreateAccount(userId: string, currency: string) {
@@ -137,6 +139,8 @@ export class WalletService {
           note: note ?? null,
           counterpartyUserId: null,
           productId: null,
+          listingId: null,
+          offerId: null,
         }),
       );
 
@@ -174,6 +178,8 @@ export class WalletService {
           note: note ?? null,
           counterpartyUserId: null,
           productId: null,
+          listingId: null,
+          offerId: null,
         }),
       );
       return acc;
@@ -225,6 +231,8 @@ export class WalletService {
           currency,
           counterpartyUserId: toUserId,
           productId: null,
+          listingId: null,
+          offerId: null,
           note: note ?? null,
         }),
         txRepo.create({
@@ -235,6 +243,8 @@ export class WalletService {
           currency,
           counterpartyUserId: fromUserId,
           productId: null,
+          listingId: null,
+          offerId: null,
           note: note ?? null,
         }),
       ]);
@@ -280,10 +290,167 @@ export class WalletService {
           currency,
           counterpartyUserId: null,
           productId,
+          listingId: null,
+          offerId: null,
           note: `purchase x${quantity}: ${product.name}`,
         }),
       );
 
+      await this.marketplace.grantInventoryAfterCatalogPurchase(
+        manager,
+        userId,
+        productId,
+        quantity,
+      );
+
+      return acc;
+    });
+  }
+
+  /**
+   * Global ledger (newest first), cursor-paginated. Optional filters by owner, currency, type.
+   */
+  async adminListTransactionsPage(opts: {
+    limit?: number;
+    cursor?: string;
+    userId?: string;
+    currency?: string;
+    type?: string;
+  }): Promise<{
+    items: ReturnType<typeof toWalletTransactionWire>[];
+    nextCursor: string | null;
+  }> {
+    const limit = Math.min(Math.max(opts.limit ?? 50, 1), 100);
+
+    let cursorCreatedAt: Date | undefined;
+    let cursorId: string | undefined;
+    if (opts.cursor) {
+      const cur = await this.txRepo.findOne({
+        where: { id: opts.cursor },
+        select: ['id', 'createdAt'],
+      });
+      if (cur) {
+        cursorCreatedAt =
+          cur.createdAt instanceof Date
+            ? cur.createdAt
+            : new Date(cur.createdAt as unknown as string);
+        cursorId = cur.id;
+      }
+    }
+
+    const qb = this.txRepo
+      .createQueryBuilder('t')
+      .orderBy('t.createdAt', 'DESC')
+      .addOrderBy('t.id', 'DESC')
+      .take(limit);
+
+    if (opts.userId) {
+      qb.andWhere('t.user_id = :uid', { uid: opts.userId });
+    }
+    if (opts.currency) {
+      qb.andWhere('t.currency = :cur', { cur: opts.currency });
+    }
+    if (opts.type) {
+      qb.andWhere('t.type = :typ', { typ: opts.type });
+    }
+    if (cursorCreatedAt && cursorId) {
+      qb.andWhere(
+        '(t.createdAt < :cAt OR (t.createdAt = :cAt AND t.id < :cId))',
+        { cAt: cursorCreatedAt, cId: cursorId },
+      );
+    }
+
+    const rows = await qb.getMany();
+    const items = rows.map((r) => toWalletTransactionWire(r));
+    const nextCursor =
+      rows.length === limit ? rows[rows.length - 1].id : null;
+    return { items, nextCursor };
+  }
+
+  async adminListAccountsPage(
+    page: number,
+    limit: number,
+    filters?: { userId?: string; currency?: string },
+  ) {
+    const take = Math.min(Math.max(limit, 1), 100);
+    const skip = Math.max(page - 1, 0) * take;
+    const qb = this.accountRepo
+      .createQueryBuilder('a')
+      .leftJoinAndSelect('a.user', 'u')
+      .orderBy('a.updatedAt', 'DESC')
+      .skip(skip)
+      .take(take);
+    if (filters?.userId) {
+      qb.andWhere('a.user_id = :uid', { uid: filters.userId });
+    }
+    if (filters?.currency) {
+      qb.andWhere('a.currency = :cur', { cur: filters.currency });
+    }
+    const [rows, total] = await qb.getManyAndCount();
+    return {
+      items: rows.map((a) => ({
+        id: a.id,
+        userId: a.userId,
+        mobile: a.user?.mobile ?? null,
+        currency: a.currency,
+        balance: a.balance,
+        createdAt: a.createdAt,
+        updatedAt: a.updatedAt,
+      })),
+      total,
+      page,
+      limit: take,
+    };
+  }
+
+  /**
+   * Apply a signed delta to the user's balance and record an `adjustment` row.
+   * Resulting balance must stay non-negative.
+   */
+  async applyAdminAdjustment(
+    userId: string,
+    currency: string,
+    deltaStr: string,
+    note?: string,
+  ) {
+    const delta = asBigint(deltaStr);
+    if (delta === 0n) {
+      throw new BadRequestException('delta must be non-zero');
+    }
+    const account = await this.getOrCreateAccount(userId, currency);
+
+    return this.dataSource.transaction(async (manager) => {
+      const accRepo = manager.getRepository(WalletAccount);
+      const txRepo = manager.getRepository(WalletTransaction);
+      const acc = await accRepo.findOne({
+        where: { id: account.id },
+        lock: { mode: 'pessimistic_write' as any },
+      });
+      if (!acc) throw new NotFoundException('Account not found');
+      const newBal = BigInt(acc.balance) + delta;
+      if (newBal < 0n) {
+        throw new BadRequestException('Insufficient funds');
+      }
+      acc.balance = newBal.toString();
+      await accRepo.save(acc);
+      const prefix = '[admin]';
+      const fullNote = note?.trim()
+        ? `${prefix} ${note.trim()}`
+        : prefix;
+      await txRepo.save(
+        txRepo.create({
+          account: { id: acc.id } as WalletAccount,
+          user: { id: userId } as User,
+          type: 'adjustment',
+          amount: delta.toString(),
+          currency,
+          note: fullNote,
+          counterpartyUserId: null,
+          productId: null,
+          listingId: null,
+          offerId: null,
+        }),
+      );
       return acc;
     });
   }

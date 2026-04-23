@@ -48,6 +48,22 @@ export class UsersService {
     return users.map((u) => this.sanitize(u));
   }
 
+  async findAllPaged(page: number, limit: number) {
+    const take = Math.min(Math.max(limit, 1), 100);
+    const skip = Math.max(page - 1, 0) * take;
+    const [users, total] = await this.userRepo.findAndCount({
+      order: { createdAt: 'DESC' },
+      skip,
+      take,
+    });
+    return {
+      items: users.map((u) => this.sanitize(u)),
+      total,
+      page,
+      limit: take,
+    };
+  }
+
   async findOne(id: string): Promise<Omit<User, 'passwordHash'> | null> {
     const user = await this.userRepo.findOne({ where: { id } });
     return user ? this.sanitize(user) : null;

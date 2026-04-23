@@ -6,6 +6,7 @@
 |------|--------|------|-----------|----------|
 | **Чати** | ✅ | ✅ ChatsController | ✅ ChatsGateway | join/leave, myChats, public search |
 | **Групи** | ✅ | ✅ через Chats | ✅ через Chats | `isGroup: true`; обкладинка групи: `imageUrl` або `POST /chats/:id/image` |
+| **Marketplace (P2P)** | ✅ | `GET/POST /marketplace/*` | — | покупець `.../offers`, продавець `.../accept` / `reject` (гроші + товар після підтвердження) |
 | **Профіль** | ✅ | ✅ GET/PATCH /users/me | — | логотип (avatarUrl), нікнейм, активність (lastActiveAt) |
 | **Індикатор активності** | ✅ | lastActiveAt у профілі | ✅ userOnline / userOffline (PresenceGateway) | оновлення при підключенні WS |
 | **Дзвінки** | ✅ | ✅ CallsController | ✅ CallsGateway | startCall, endCall, callSignal |

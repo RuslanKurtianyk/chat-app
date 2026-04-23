@@ -28,9 +28,14 @@ import { LocationPoint } from './geolocation/entities/location-point.entity';
 import { Product } from './products/entities/product.entity';
 import { WalletAccount } from './wallet/entities/wallet-account.entity';
 import { WalletTransaction } from './wallet/entities/wallet-transaction.entity';
+import { UserInventory } from './marketplace/entities/user-inventory.entity';
+import { ProductListing } from './marketplace/entities/product-listing.entity';
+import { MarketplaceOffer } from './marketplace/entities/marketplace-offer.entity';
 import { ProductsModule } from './products/products.module';
 import { WalletModule } from './wallet/wallet.module';
 import { WsModule } from './ws/ws.module';
+import { MarketplaceModule } from './marketplace/marketplace.module';
+import { AdminModule } from './admin/admin.module';
 
 const typeOrmEntities = [
   User,
@@ -46,6 +51,9 @@ const typeOrmEntities = [
   Product,
   WalletAccount,
   WalletTransaction,
+  UserInventory,
+  ProductListing,
+  MarketplaceOffer,
 ];
 
 @Module({
@@ -112,6 +120,8 @@ const typeOrmEntities = [
     StorageModule,
     ProductsModule,
     WalletModule,
+    MarketplaceModule,
+    AdminModule,
     WsModule,
   ],
   controllers: [AppController],

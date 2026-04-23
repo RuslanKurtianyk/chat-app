@@ -5,11 +5,13 @@ import { WalletTransaction } from './entities/wallet-transaction.entity';
 import { WalletService } from './wallet.service';
 import { WalletController } from './wallet.controller';
 import { ProductsModule } from '../products/products.module';
+import { MarketplaceModule } from '../marketplace/marketplace.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([WalletAccount, WalletTransaction]),
     ProductsModule,
+    MarketplaceModule,
   ],
   providers: [WalletService],
   controllers: [WalletController],
