@@ -29,8 +29,9 @@ services:
       NODE_ENV: development
       # Local Postgres in this compose stack
       DATABASE_URL: postgresql://chat:chat@postgres:5432/chat
-      # For local convenience (auto-create schema). For prod keep false and run migrations.
-      DATABASE_SYNC: "true"
+      # Schema from TypeORM migrations (API runs `migration:run` before `nest start --watch`).
+      DATABASE_SYNC: "false"
+      # If this volume was first created with DATABASE_SYNC=true, run once: docker compose down -v
       DATABASE_SSL: "false"
       JWT_SECRET: dev-only-change-me
       CORS_ALLOW_LOCALHOST: "true"

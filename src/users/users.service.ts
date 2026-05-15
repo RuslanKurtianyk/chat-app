@@ -115,6 +115,29 @@ export class UsersService {
     await this.userRepo.delete(id);
   }
 
+  async adminBlockUser(
+    userId: string,
+    params?: { reason?: string | null },
+  ): Promise<Omit<User, 'passwordHash'> | null> {
+    await this.userRepo.update(userId, {
+      isBlocked: true,
+      blockedAt: new Date(),
+      blockedReason: params?.reason?.trim() || null,
+    });
+    return this.findOne(userId);
+  }
+
+  async adminUnblockUser(
+    userId: string,
+  ): Promise<Omit<User, 'passwordHash'> | null> {
+    await this.userRepo.update(userId, {
+      isBlocked: false,
+      blockedAt: null,
+      blockedReason: null,
+    });
+    return this.findOne(userId);
+  }
+
   private sanitize(user: User): Omit<User, 'passwordHash'> {
     const { passwordHash: _, ...rest } = user;
     return rest;

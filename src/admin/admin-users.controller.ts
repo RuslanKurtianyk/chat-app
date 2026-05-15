@@ -49,6 +49,29 @@ export class AdminUsersController {
     return this.users.update(id, dto);
   }
 
+  /**
+   * Block/ban a user account (admin action).
+   * Body: { "reason"?: string }
+   */
+  @Post(':id/block')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  async block(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { reason?: string },
+  ) {
+    const u = await this.users.adminBlockUser(id, { reason: body?.reason });
+    if (!u) throw new NotFoundException('User not found');
+    return u;
+  }
+
+  /** Unblock/unban a user account (admin action). */
+  @Delete(':id/block')
+  async unblock(@Param('id', ParseUUIDPipe) id: string) {
+    const u = await this.users.adminUnblockUser(id);
+    if (!u) throw new NotFoundException('User not found');
+    return u;
+  }
+
   @Delete(':id')
   async remove(@Param('id', ParseUUIDPipe) id: string) {
     await this.users.remove(id);

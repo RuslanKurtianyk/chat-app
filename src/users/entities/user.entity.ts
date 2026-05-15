@@ -33,6 +33,18 @@ export class User {
   @Column({ name: 'last_active_at', type: 'timestamp', nullable: true })
   lastActiveAt: Date | null;
 
+  /** Admin-only: user is blocked/banned from using the app. */
+  @Column({ name: 'is_blocked', type: 'boolean', default: false })
+  isBlocked: boolean;
+
+  /** When the user was blocked (admin action). */
+  @Column({ name: 'blocked_at', type: 'timestamp', nullable: true })
+  blockedAt: Date | null;
+
+  /** Optional admin note / reason. */
+  @Column({ name: 'blocked_reason', type: 'text', nullable: true })
+  blockedReason: string | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

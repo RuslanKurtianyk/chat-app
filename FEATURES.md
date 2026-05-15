@@ -13,6 +13,7 @@
 | **Сторіз** | ✅ | ✅ StoriesController | ✅ StoriesGateway | createStory, getStories, expiresAt |
 | **Папки** | ✅ | ✅ FoldersController | ✅ FoldersGateway | папки чатів, addChat/removeChat |
 | **Геолокація** | ✅ | ✅ GeolocationController | ✅ GeolocationGateway | share, route/today (маршрут за день) |
+| **Admin: блокування користувачів** | ✅ | ✅ `POST/DELETE /admin/users/:id/block` | — | Потрібен `ADMIN_API_KEY` |
 
 ## Профіль (вимоги)
 

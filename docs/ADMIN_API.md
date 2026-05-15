@@ -62,6 +62,8 @@ Use **`Content-Type: application/json`** for bodies.
 | `GET` | `/admin/users/:id` | One user (UUID); **404** if missing |
 | `POST` | `/admin/users` | Create |
 | `PATCH` | `/admin/users/:id` | Partial update |
+| `POST` | `/admin/users/:id/block` | Block / ban a user account |
+| `DELETE` | `/admin/users/:id/block` | Unblock / unban a user account |
 | `DELETE` | `/admin/users/:id` | Delete |
 
 **List query parameters:** `page` (default `1`), `limit` (default `20`, max `100`).
@@ -76,6 +78,20 @@ Use **`Content-Type: application/json`** for bodies.
 | `password` | min 8 characters |
 
 **Update body** (all optional): `mobile`, `password`, `name` (max 200), `avatarUrl` (URL), `nickname` (max 50). Password is re-hashed when provided.
+
+### Blocking / unblocking users
+
+Block endpoint body (optional):
+
+| Field | Rules |
+|-------|--------|
+| `reason` | optional string; stored in `users.blockedReason` |
+
+When blocked, the user record will have:
+
+- `isBlocked: true`
+- `blockedAt: <timestamp>`
+- `blockedReason: <reason|null>`
 
 ---
 

@@ -27,6 +27,7 @@ import { AddMissingUsersColumns0004174319000000 } from './migrations/0004_add_mi
 import { ChatImageUrl0005174319000000 } from './migrations/0005_chat_image_url';
 import { MarketplaceInventory0006174319000000 } from './migrations/0006_marketplace_inventory';
 import { MarketplaceOffers0007174319000000 } from './migrations/0007_marketplace_offers';
+import { UserBlocking0008174638610000 } from './migrations/0008_user_blocking';
 
 function loadDotEnvIfPresent() {
   const p = join(process.cwd(), '.env');
@@ -78,6 +79,7 @@ const migrations = [
   ChatImageUrl0005174319000000,
   MarketplaceInventory0006174319000000,
   MarketplaceOffers0007174319000000,
+  UserBlocking0008174638610000,
 ];
 
 async function buildPostgresDataSource() {

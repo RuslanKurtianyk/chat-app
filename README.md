@@ -61,7 +61,7 @@ See **[TESTING.md](./TESTING.md)** for how to test the chat app (unit, e2e, and 
 
 **Shop purchases and peer marketplace trades:** **[docs/PURCHASING_AND_TRADING.md](./docs/PURCHASING_AND_TRADING.md)** (catalog → inventory → listings → offers → seller accept).
 
-**Admin HTTP API** (products, users, wallet ledger / adjustments): **[docs/ADMIN_API.md](./docs/ADMIN_API.md)** (`ADMIN_API_KEY`, header `X-Admin-Api-Key`).
+**Admin HTTP API** (products, users, wallet ledger / adjustments): **[docs/ADMIN_API.md](./docs/ADMIN_API.md)** / **[docs/ADMIN_API.uk.md](./docs/ADMIN_API.uk.md)** (`ADMIN_API_KEY`, header `X-Admin-Api-Key`).
 
 ## Deployment
 

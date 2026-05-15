@@ -9,7 +9,7 @@ FROM deps AS dev
 ENV NODE_ENV=development
 COPY . .
 EXPOSE 3000
-CMD ["npm","run","start:dev"]
+CMD ["npm","run","start:dev:migrate"]
 
 FROM deps AS build
 COPY . .
