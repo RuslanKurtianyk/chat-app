@@ -12,6 +12,9 @@ services:
     startCommand: npm run start:prod:migrate
     healthCheckPath: /health
     envVars:
+      # better-sqlite3 has no prebuilds for Node 26+; prod uses Postgres via DATABASE_URL
+      - key: NODE_VERSION
+        value: "22"
       - key: NODE_ENV
         value: production
       # Set in Render dashboard (sensitive) or use fromSecret:
